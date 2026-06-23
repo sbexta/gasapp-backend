@@ -1,3 +1,6 @@
+using GasApp.Domain.Entities.Checklists;
+using GasApp.Domain.Entities.Clients;
+using GasApp.Domain.Entities.Inspections;
 using GasApp.Domain.Entities.Users;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,6 +10,19 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 {
     public DbSet<User> Users => Set<User>();
     public DbSet<UserSession> UserSessions => Set<UserSession>();
+
+    public DbSet<Client> Clients => Set<Client>();
+    public DbSet<Contract> Contracts => Set<Contract>();
+    public DbSet<Location> Locations => Set<Location>();
+    public DbSet<Installation> Installations => Set<Installation>();
+
+    public DbSet<InspectionType> InspectionTypes => Set<InspectionType>();
+    public DbSet<WorkOrder> WorkOrders => Set<WorkOrder>();
+    public DbSet<Inspection> Inspections => Set<Inspection>();
+
+    public DbSet<ChecklistTemplate> ChecklistTemplates => Set<ChecklistTemplate>();
+    public DbSet<ChecklistSection> ChecklistSections => Set<ChecklistSection>();
+    public DbSet<ChecklistItem> ChecklistItems => Set<ChecklistItem>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
