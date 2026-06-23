@@ -3,6 +3,7 @@ using GasApp.API.Middleware;
 using GasApp.Application;
 using GasApp.Application.Common.Interfaces;
 using GasApp.Infrastructure;
+using GasApp.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -69,6 +70,14 @@ app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 if (app.Environment.IsDevelopment())
 {
+    using (var scope = app.Services.CreateScope())
+    {
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        await DbSeeder.SeedAsync(db, hasher, logger);
+    }
+
     app.UseSwagger();
     app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "GasApp API v1"));
     app.UseCors("Development");
