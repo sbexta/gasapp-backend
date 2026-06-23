@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "skills": {
+    "postgres-patterns": {
+      "source": "affaan-m/everything-claude-code",
+      "sourceType": "github",
+      "skillPath": "skills/postgres-patterns/SKILL.md",
+      "computedHash": "e067e9311a87cfca8b26c792ca04cdf3cc294213f3335f646eee6efbd0188114"
+    },
+    "software-architecture": {
+      "source": "bbeierle12/skill-mcp-claude",
+      "sourceType": "github",
+      "skillPath": "skills/software-architecture/SKILL.md",
+      "computedHash": "cf4a8c027c433685fa828e7a217009d07a094521fb587b9f6d32650200d76189"
+    }
+  }
+}

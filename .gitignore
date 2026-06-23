@@ -1,0 +1,51 @@
+# Build outputs
+bin/
+obj/
+out/
+
+# VS / Rider
+.vs/
+.idea/
+*.user
+*.suo
+*.userprefs
+*.sln.cache
+
+# dotnet
+*.nupkg
+*.snupkg
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Logs
+*.log
+logs/
+
+# Environment / secrets
+appsettings.*.local.json
+.env
+.env.*
+!.env.example
+secrets.json
+
+# Node (web / mobile)
+node_modules/
+.expo/
+dist/
+.next/
+.nuxt/
+
+# Coverage
+coverage/
+TestResults/
+*.coverage
+*.coveragexml
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Docker
+docker-compose.override.yml
