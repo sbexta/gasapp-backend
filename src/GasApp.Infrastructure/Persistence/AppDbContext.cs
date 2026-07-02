@@ -24,6 +24,11 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<ChecklistSection> ChecklistSections => Set<ChecklistSection>();
     public DbSet<ChecklistItem> ChecklistItems => Set<ChecklistItem>();
 
+    public DbSet<ChecklistResponse> ChecklistResponses => Set<ChecklistResponse>();
+    public DbSet<Evidence> Evidences => Set<Evidence>();
+    public DbSet<Finding> Findings => Set<Finding>();
+    public DbSet<InspectionSignature> InspectionSignatures => Set<InspectionSignature>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);

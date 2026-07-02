@@ -36,8 +36,44 @@ export interface WorkOrderDetailDto {
     businessName: string
     contactPhone: string | null
   }
-  inspection: {
-    id: string
-    status: string
-  } | null
+}
+
+export interface WorkOrderChecklistDto {
+  inspectionId: string
+  sections: ChecklistSectionDto[]
+}
+
+export interface ChecklistSectionDto {
+  id: string
+  name: string
+  order: number
+  items: ChecklistItemDto[]
+}
+
+export interface ChecklistItemDto {
+  id: string
+  question: string
+  itemType: 'YesNo' | 'Text' | 'Numeric' | 'Photo' | 'Signature'
+  isRequired: boolean
+  order: number
+  helpText: string | null
+  response: ChecklistItemResponseDto | null
+}
+
+export interface ChecklistItemResponseDto {
+  responseId: string
+  textValue: string | null
+  boolValue: boolean | null
+  numericValue: number | null
+  complies: boolean
+  notes: string | null
+}
+
+export interface FindingDto {
+  id: string
+  description: string
+  severity: 'Low' | 'Medium' | 'High' | 'Critical'
+  requiresCorrection: boolean
+  isResolved: boolean
+  correctiveAction: string | null
 }

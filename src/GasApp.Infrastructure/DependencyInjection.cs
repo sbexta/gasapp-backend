@@ -3,6 +3,7 @@ using GasApp.Domain.Repositories;
 using GasApp.Infrastructure.Auth;
 using GasApp.Infrastructure.Persistence;
 using GasApp.Infrastructure.Persistence.Repositories;
+using GasApp.Infrastructure.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -29,6 +30,12 @@ public static class DependencyInjection
         services.AddScoped<IWorkOrderRepository, WorkOrderRepository>();
         services.AddScoped<IInspectionRepository, InspectionRepository>();
         services.AddScoped<IChecklistTemplateRepository, ChecklistTemplateRepository>();
+        services.AddScoped<IChecklistResponseRepository, ChecklistResponseRepository>();
+        services.AddScoped<IEvidenceRepository, EvidenceRepository>();
+        services.AddScoped<IFindingRepository, FindingRepository>();
+        services.AddScoped<IInspectionSignatureRepository, InspectionSignatureRepository>();
+
+        services.AddScoped<IFileStorageService, LocalFileStorageService>();
 
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddSingleton<IPasswordHasher, BcryptPasswordHasher>();

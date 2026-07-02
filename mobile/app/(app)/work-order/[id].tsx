@@ -118,8 +118,8 @@ export default function WorkOrderDetailScreen() {
         )}
       </ScrollView>
 
-      {canStart && (
-        <View style={styles.footer}>
+      <View style={styles.footer}>
+        {canStart && (
           <TouchableOpacity
             style={[styles.startButton, startMutation.isPending && styles.startButtonDisabled]}
             onPress={handleStart}
@@ -130,8 +130,24 @@ export default function WorkOrderDetailScreen() {
               : <Text style={styles.startButtonText}>Iniciar inspección</Text>
             }
           </TouchableOpacity>
-        </View>
-      )}
+        )}
+        {data.status === 'InProgress' && (
+          <View style={styles.actionRow}>
+            <TouchableOpacity
+              style={styles.actionBtn}
+              onPress={() => router.push(`/(app)/checklist/${id}`)}
+            >
+              <Text style={styles.actionBtnText}>📋 Checklist</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.actionBtn}
+              onPress={() => router.push(`/(app)/findings/${id}`)}
+            >
+              <Text style={styles.actionBtnText}>⚠️ Hallazgos</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
     </SafeAreaView>
   )
 }
@@ -178,7 +194,14 @@ const styles = StyleSheet.create({
     padding: 16,
     borderTopWidth: 1,
     borderTopColor: '#E5E7EB',
+    gap: 10,
   },
+  actionRow: { flexDirection: 'row', gap: 10 },
+  actionBtn: {
+    flex: 1, height: 44, borderRadius: 10, backgroundColor: '#EFF6FF',
+    alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#BFDBFE',
+  },
+  actionBtnText: { color: '#1D4ED8', fontWeight: '600', fontSize: 14 },
   startButton: {
     height: 50,
     backgroundColor: '#1D4ED8',
