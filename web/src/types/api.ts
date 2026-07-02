@@ -89,5 +89,50 @@ export interface InspectionTypeDto {
   requiresCertificate: boolean
 }
 
+export interface InspectionListDto {
+  id: string
+  workOrderId: string
+  orderNumber: string
+  status: string
+  startedAt: string | null
+  completedAt: string | null
+  scheduledDate: string
+}
+
+export interface InspectionDetailDto {
+  id: string
+  workOrderId: string
+  orderNumber: string
+  scheduledDate: string
+  status: string
+  startedAt: string | null
+  completedAt: string | null
+  technicianNotes: string | null
+  responses: InspectionResponseDto[]
+  findings: InspectionFindingDto[]
+  hasSignature: boolean
+}
+
+export interface InspectionResponseDto {
+  id: string
+  checklistItemId: string
+  textValue: string | null
+  boolValue: boolean | null
+  numericValue: number | null
+  complies: boolean
+  notes: string | null
+}
+
+export interface InspectionFindingDto {
+  id: string
+  description: string
+  severity: string
+  requiresCorrection: boolean
+  isResolved: boolean
+  correctiveAction: string | null
+  checklistItemId: string | null
+}
+
 export type ClientType = 'Residential' | 'Commercial' | 'Industrial'
 export type WorkOrderStatus = 'Draft' | 'Scheduled' | 'Assigned' | 'InProgress' | 'Completed' | 'Cancelled'
+export type InspectionStatus = 'Pending' | 'PreCheck' | 'InProgress' | 'TechnicalReview' | 'GeneratingDocs' | 'Completed' | 'RequiresFollowup' | 'Rejected'

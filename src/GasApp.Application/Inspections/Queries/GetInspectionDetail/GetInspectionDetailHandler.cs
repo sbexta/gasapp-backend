@@ -23,6 +23,8 @@ public class GetInspectionDetailHandler(
         return new InspectionDetailDto(
             inspection.Id,
             inspection.WorkOrderId,
+            inspection.WorkOrder.OrderNumber,
+            inspection.WorkOrder.ScheduledDate,
             inspection.Status.ToString(),
             inspection.StartedAt,
             inspection.CompletedAt,

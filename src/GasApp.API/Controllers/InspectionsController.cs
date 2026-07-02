@@ -1,10 +1,13 @@
 using GasApp.Application.Common.Interfaces;
 using GasApp.Application.Inspections.Commands.AddFinding;
+using GasApp.Application.Inspections.Commands.ApproveInspection;
 using GasApp.Application.Inspections.Commands.CaptureSignature;
 using GasApp.Application.Inspections.Commands.SubmitChecklistResponse;
+using GasApp.Application.Inspections.Commands.SubmitInspection;
 using GasApp.Application.Inspections.Commands.UploadEvidence;
 using GasApp.Application.Inspections.Queries.GetChecklistByWorkOrder;
 using GasApp.Application.Inspections.Queries.GetInspectionDetail;
+using GasApp.Application.Inspections.Queries.GetInspections;
 using GasApp.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -17,6 +20,14 @@ namespace GasApp.API.Controllers;
 [Authorize]
 public class InspectionsController(IMediator mediator, ICurrentUserService currentUser) : ControllerBase
 {
+    [HttpGet]
+    [Authorize(Roles = "Admin,Supervisor")]
+    public async Task<IActionResult> GetList([FromQuery] int page = 1, [FromQuery] int pageSize = 20, [FromQuery] string? status = null, CancellationToken ct = default)
+    {
+        var result = await mediator.Send(new GetInspectionsQuery(page, pageSize, status), ct);
+        return Ok(result);
+    }
+
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetDetail(Guid id, CancellationToken ct)
     {
@@ -61,6 +72,22 @@ public class InspectionsController(IMediator mediator, ICurrentUserService curre
         return NoContent();
     }
 
+    [HttpPost("{id:guid}/submit")]
+    [Authorize(Roles = "Admin,Supervisor,Technician")]
+    public async Task<IActionResult> Submit(Guid id, [FromBody] SubmitInspectionRequest request, CancellationToken ct)
+    {
+        await mediator.Send(new SubmitInspectionCommand(id, request.TechnicianNotes), ct);
+        return NoContent();
+    }
+
+    [HttpPost("{id:guid}/approve")]
+    [Authorize(Roles = "Admin,Supervisor")]
+    public async Task<IActionResult> Approve(Guid id, [FromBody] ApproveInspectionRequest request, CancellationToken ct)
+    {
+        await mediator.Send(new ApproveInspectionCommand(id, request.SupervisorNotes), ct);
+        return NoContent();
+    }
+
     [HttpPost("{id:guid}/evidences")]
     [Authorize(Roles = "Admin,Supervisor,Technician")]
     public async Task<IActionResult> UploadEvidence(Guid id, [FromBody] UploadEvidenceRequest request, CancellationToken ct)
@@ -83,6 +110,9 @@ public record AddFindingRequest(
 
 public record CaptureSignatureRequest(
     string SignerName, string SignatureData, string? SignerDocument);
+
+public record SubmitInspectionRequest(string? TechnicianNotes);
+public record ApproveInspectionRequest(string? SupervisorNotes);
 
 public record UploadEvidenceRequest(
     EvidenceType Type, string FileName, string ContentType,

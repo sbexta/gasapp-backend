@@ -26,6 +26,7 @@ export interface WorkOrderDetailDto {
   status: string
   scheduledDate: string
   notes: string | null
+  inspectionId: string | null
   location: {
     name: string
     address: string

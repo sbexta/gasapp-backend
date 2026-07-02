@@ -7,6 +7,10 @@ import { WorkOrdersPage } from '@/pages/WorkOrdersPage'
 import { LocationsPage } from '@/pages/LocationsPage'
 import { InspectionTypesPage } from '@/pages/InspectionTypesPage'
 import { ContractsPage } from '@/pages/ContractsPage'
+import { InspectionsPage } from '@/pages/InspectionsPage'
+import { InspectionDetailPage } from '@/pages/InspectionDetailPage'
+import { UsersPage } from '@/pages/UsersPage'
+import { PermissionsPage } from '@/pages/PermissionsPage'
 
 const rootRoute = createRootRoute()
 
@@ -68,6 +72,30 @@ const inspectionTypesRoute = createRoute({
   component: InspectionTypesPage,
 })
 
+const inspectionsRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/inspections',
+  component: InspectionsPage,
+})
+
+const inspectionDetailRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/inspections/$id',
+  component: InspectionDetailPage,
+})
+
+const usersRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/users',
+  component: UsersPage,
+})
+
+const permissionsRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/permissions',
+  component: PermissionsPage,
+})
+
 const routeTree = rootRoute.addChildren([
   loginRoute,
   appRoute.addChildren([
@@ -78,6 +106,10 @@ const routeTree = rootRoute.addChildren([
     locationsRoute,
     inspectionTypesRoute,
     workOrdersRoute,
+    inspectionsRoute,
+    inspectionDetailRoute,
+    usersRoute,
+    permissionsRoute,
   ]),
 ])
 

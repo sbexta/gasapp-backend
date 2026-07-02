@@ -1,3 +1,4 @@
+using GasApp.Domain.Entities;
 using GasApp.Domain.Entities.Checklists;
 using GasApp.Domain.Entities.Clients;
 using GasApp.Domain.Entities.Inspections;
@@ -28,6 +29,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Evidence> Evidences => Set<Evidence>();
     public DbSet<Finding> Findings => Set<Finding>();
     public DbSet<InspectionSignature> InspectionSignatures => Set<InspectionSignature>();
+    public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

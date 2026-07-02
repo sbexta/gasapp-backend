@@ -11,7 +11,8 @@ public record WorkOrderDetailDto(
     DateTime ScheduledDate,
     string? Notes,
     WorkOrderLocationDto Location,
-    WorkOrderClientDto Client
+    WorkOrderClientDto Client,
+    Guid? InspectionId = null
 );
 
 public record WorkOrderLocationDto(

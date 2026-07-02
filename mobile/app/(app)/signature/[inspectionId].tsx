@@ -13,35 +13,77 @@ export default function SignatureScreen() {
   const sigRef = useRef<any>(null)
   const [signerName, setSignerName] = useState('')
   const [signerDocument, setSignerDocument] = useState('')
-  const [signatureData, setSignatureData] = useState<string | null>(null)
+  const [signatureSaved, setSignatureSaved] = useState(false)
+  const [hasDraw, setHasDraw] = useState(false)
+  // guardamos si el usuario presionó "Guardar" para saber si ejecutar la mutación al llegar onOK
+  const pendingSave = useRef(false)
 
-  const mutation = useMutation({
-    mutationFn: () =>
+  const signatureMutation = useMutation({
+    mutationFn: (sigData: string) =>
       api.post(`/inspections/${inspectionId}/signature`, {
         signerName: signerName.trim(),
-        signatureData: signatureData!,
+        signatureData: sigData,
         signerDocument: signerDocument.trim() || null,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inspection', inspectionId] })
-      Alert.alert('Firma guardada', 'La firma del cliente fue registrada correctamente', [
-        { text: 'OK', onPress: () => router.back() },
-      ])
+      setSignatureSaved(true)
     },
     onError: (err: any) => {
       Alert.alert('Error', err.response?.data?.detail ?? 'No se pudo guardar la firma')
     },
   })
 
+  const submitMutation = useMutation({
+    mutationFn: () =>
+      api.post(`/inspections/${inspectionId}/submit`, { technicianNotes: null }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['work-order'] })
+      queryClient.invalidateQueries({ queryKey: ['agenda'] })
+      Alert.alert(
+        'Inspección finalizada',
+        'La inspección fue enviada para revisión correctamente.',
+        [{ text: 'OK', onPress: () => router.replace('/(app)/agenda') }]
+      )
+    },
+    onError: (err: any) => {
+      Alert.alert('Error', err.response?.data?.detail ?? 'No se pudo finalizar la inspección')
+    },
+  })
+
   function handleSave() {
-    if (!signerName.trim()) { Alert.alert('Requerido', 'Ingresa el nombre del firmante'); return }
-    if (!signatureData) { Alert.alert('Requerido', 'Dibuja la firma en el recuadro'); return }
-    mutation.mutate()
+    if (!signerName.trim()) {
+      Alert.alert('Requerido', 'Ingresa el nombre del firmante')
+      return
+    }
+    if (!hasDraw) {
+      Alert.alert('Requerido', 'Dibuja la firma en el recuadro')
+      return
+    }
+    pendingSave.current = true
+    // readSignature dispara onOK con el base64 si hay trazos, o onEmpty si está vacío
+    sigRef.current?.readSignature()
   }
 
   function handleClear() {
     sigRef.current?.clearSignature()
-    setSignatureData(null)
+    setHasDraw(false)
+  }
+
+  // Se dispara cuando readSignature() encuentra trazos
+  function handleOK(sig: string) {
+    if (pendingSave.current) {
+      pendingSave.current = false
+      signatureMutation.mutate(sig)
+    }
+  }
+
+  // Se dispara cuando readSignature() encuentra el canvas vacío
+  function handleEmpty() {
+    if (pendingSave.current) {
+      pendingSave.current = false
+      Alert.alert('Requerido', 'Dibuja la firma en el recuadro')
+    }
   }
 
   return (
@@ -54,63 +96,91 @@ export default function SignatureScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-        <Text style={styles.label}>Nombre del firmante *</Text>
-        <TextInput
-          style={styles.input}
-          value={signerName}
-          onChangeText={setSignerName}
-          placeholder="Nombre completo"
-          autoCapitalize="words"
-        />
+        {!signatureSaved ? (
+          <>
+            <Text style={styles.label}>Nombre del firmante *</Text>
+            <TextInput
+              style={styles.input}
+              value={signerName}
+              onChangeText={setSignerName}
+              placeholder="Nombre completo"
+              autoCapitalize="words"
+            />
 
-        <Text style={styles.label}>Documento (opcional)</Text>
-        <TextInput
-          style={styles.input}
-          value={signerDocument}
-          onChangeText={setSignerDocument}
-          placeholder="Cédula o NIT"
-          keyboardType="numeric"
-        />
+            <Text style={styles.label}>Documento (opcional)</Text>
+            <TextInput
+              style={styles.input}
+              value={signerDocument}
+              onChangeText={setSignerDocument}
+              placeholder="Cédula o NIT"
+              keyboardType="numeric"
+            />
 
-        <Text style={styles.label}>Firma *</Text>
-        <View style={styles.signatureContainer}>
-          <SignatureCanvas
-            ref={sigRef}
-            onOK={(sig) => setSignatureData(sig)}
-            onEmpty={() => setSignatureData(null)}
-            descriptionText=""
-            clearText="Limpiar"
-            confirmText="Guardar firma"
-            webStyle={`
-              .m-signature-pad { box-shadow: none; border: none; }
-              .m-signature-pad--body { border: none; }
-              .m-signature-pad--footer { display: none; }
-              body { margin: 0; }
-            `}
-            style={{ flex: 1 }}
-          />
-          {signatureData && (
-            <View style={styles.signedBadge}>
-              <Text style={styles.signedText}>✓ Firma capturada</Text>
+            <Text style={styles.label}>Firma *</Text>
+            <View style={styles.signatureContainer}>
+              <SignatureCanvas
+                ref={sigRef}
+                onOK={handleOK}
+                onEmpty={handleEmpty}
+                onBegin={() => setHasDraw(true)}
+                descriptionText=""
+                clearText="Limpiar"
+                confirmText="Confirmar"
+                webStyle={`
+                  .m-signature-pad { box-shadow: none; border: none; }
+                  .m-signature-pad--body { border: none; }
+                  .m-signature-pad--footer { display: none; }
+                  body { margin: 0; }
+                `}
+                style={{ flex: 1 }}
+              />
+              {hasDraw && (
+                <View style={styles.signedBadge}>
+                  <Text style={styles.signedText}>✓ Firma capturada</Text>
+                </View>
+              )}
             </View>
-          )}
-        </View>
 
-        <View style={styles.btnRow}>
-          <TouchableOpacity style={styles.clearBtn} onPress={handleClear}>
-            <Text style={styles.clearBtnText}>Limpiar</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.saveBtn, mutation.isPending && styles.saveBtnDisabled]}
-            onPress={handleSave}
-            disabled={mutation.isPending}
-          >
-            {mutation.isPending
-              ? <ActivityIndicator color="#fff" />
-              : <Text style={styles.saveBtnText}>Guardar firma</Text>
-            }
-          </TouchableOpacity>
-        </View>
+            <View style={styles.btnRow}>
+              <TouchableOpacity style={styles.clearBtn} onPress={handleClear}>
+                <Text style={styles.clearBtnText}>Limpiar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.saveBtn, signatureMutation.isPending && styles.btnDisabled]}
+                onPress={handleSave}
+                disabled={signatureMutation.isPending}
+              >
+                {signatureMutation.isPending
+                  ? <ActivityIndicator color="#fff" />
+                  : <Text style={styles.saveBtnText}>Guardar firma</Text>
+                }
+              </TouchableOpacity>
+            </View>
+          </>
+        ) : (
+          <View style={styles.successContainer}>
+            <View style={styles.successIcon}>
+              <Text style={styles.successIconText}>✓</Text>
+            </View>
+            <Text style={styles.successTitle}>Firma registrada</Text>
+            <Text style={styles.successSubtitle}>
+              La firma de {signerName} fue guardada correctamente.
+            </Text>
+            <TouchableOpacity
+              style={[styles.finishBtn, submitMutation.isPending && styles.btnDisabled]}
+              onPress={() => submitMutation.mutate()}
+              disabled={submitMutation.isPending}
+            >
+              {submitMutation.isPending
+                ? <ActivityIndicator color="#fff" />
+                : <Text style={styles.finishBtnText}>Finalizar inspección →</Text>
+              }
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.backLink} onPress={() => router.back()}>
+              <Text style={styles.backLinkText}>Volver al detalle sin finalizar</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   )
@@ -150,6 +220,21 @@ const styles = StyleSheet.create({
     flex: 2, height: 48, borderRadius: 10, backgroundColor: '#1D4ED8',
     alignItems: 'center', justifyContent: 'center',
   },
-  saveBtnDisabled: { opacity: 0.6 },
+  btnDisabled: { opacity: 0.6 },
   saveBtnText: { fontSize: 15, fontWeight: '700', color: '#fff' },
+  successContainer: { alignItems: 'center', paddingTop: 40, paddingHorizontal: 16 },
+  successIcon: {
+    width: 72, height: 72, borderRadius: 36, backgroundColor: '#D1FAE5',
+    alignItems: 'center', justifyContent: 'center', marginBottom: 16,
+  },
+  successIconText: { fontSize: 32, color: '#065F46' },
+  successTitle: { fontSize: 20, fontWeight: '700', color: '#111827', marginBottom: 8 },
+  successSubtitle: { fontSize: 14, color: '#6B7280', textAlign: 'center', marginBottom: 32 },
+  finishBtn: {
+    width: '100%', height: 52, borderRadius: 12, backgroundColor: '#059669',
+    alignItems: 'center', justifyContent: 'center', marginBottom: 12,
+  },
+  finishBtnText: { fontSize: 16, fontWeight: '700', color: '#fff' },
+  backLink: { paddingVertical: 8 },
+  backLinkText: { fontSize: 13, color: '#9CA3AF' },
 })

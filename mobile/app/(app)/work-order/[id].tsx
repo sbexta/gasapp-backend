@@ -141,7 +141,11 @@ export default function WorkOrderDetailScreen() {
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.actionBtn}
-              onPress={() => router.push(`/(app)/findings/${id}`)}
+              onPress={() => {
+                if (data.inspectionId) {
+                  router.push(`/(app)/findings/${data.inspectionId}`)
+                }
+              }}
             >
               <Text style={styles.actionBtnText}>⚠️ Hallazgos</Text>
             </TouchableOpacity>

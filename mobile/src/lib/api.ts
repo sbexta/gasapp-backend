@@ -3,7 +3,7 @@ import * as SecureStore from 'expo-secure-store'
 
 // Cambia por la IP de tu PC (ver con ipconfig → Dirección IPv4)
 // Usa http (no https) para evitar el certificado de desarrollo
-const BASE_URL = 'http://192.168.0.11:5289/api/v1'
+const BASE_URL = 'http://192.168.0.16:5289/api/v1'
 
 export const api = axios.create({
   baseURL: BASE_URL,

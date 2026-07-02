@@ -210,7 +210,7 @@ Proxy configurado: `/api` → `http://localhost:5289` (backend)
 ---
 
 ### Sprint 6 — COMPLETADO ✅
-**Commit:** (este commit)
+**Commit:** `7f0dce3`
 
 **Web admin — módulos de gestión completos:**
 - **ContractsPage** (`/contracts`) — tabla de contratos con filtro por cliente + modal "Nuevo contrato" (cliente, N° contrato, fechas inicio/fin con validación, notas)
@@ -235,6 +235,42 @@ Proxy configurado: `/api` → `http://localhost:5289` (backend)
 
 **Flujo completo sin Swagger:**
 Clientes → Contratos → Sedes → Tipos de inspección → Órdenes de trabajo → Asignar técnico
+
+---
+
+### Sprint 7 — COMPLETADO ✅
+**Commit:** (este commit)
+
+**Flujo de finalización de inspecciones — backend:**
+- **`SubmitInspectionCommand`** — técnico envía inspección: `InProgress → TechnicalReview`
+- **`ApproveInspectionCommand`** — supervisor aprueba: `TechnicalReview → GeneratingDocs → Completed` (dos transiciones en un handler)
+- **`GetInspectionsQuery`** — paginada, filtrable por status, retorna `PagedResult<InspectionListDto>` con `orderNumber` y `scheduledDate`
+- **`GetInspectionDetailQuery`** — extendido con `orderNumber` y `scheduledDate` del WorkOrder
+- **`StartWorkOrderHandler`** — fix crítico: ahora crea el `Inspection` automáticamente al iniciar la OT (Pending → PreCheck → InProgress)
+- **`GetWorkOrderByIdQuery`** — incluye `inspectionId` en el DTO para que mobile pueda navegar directamente
+- **`JsonStringEnumConverter`** en `Program.cs` — fix: enums se serializan/deserializan como string (no int)
+
+**Permisos por rol:**
+- **`AppPermission` enum** (15 permisos), **`RolePermission` entity**, migración `Sprint7_RolePermissions`
+- **`GetRolePermissionsQuery`** → matriz completa de 5 roles × 15 permisos
+- **`UpdateRolePermissionCommand`** → upsert (crear si no existe, actualizar si existe)
+- **`RolePermissionsController`** — `GET/PUT /api/v1/role-permissions` (Admin only)
+
+**Web admin — nuevas páginas:**
+- **InspectionsPage** (`/inspections`) — tabla con filtro por estado, navega al detalle
+- **InspectionDetailPage** (`/inspections/$id`) — hallazgos con colores por severidad, respuestas de checklist, estado firma, modal aprobar con notas de supervisor
+- **UsersPage** (`/users`) — CRUD completo con filtros rol/estado, modal crear con validación Zod (email, password ≥8 chars + mayúscula + número)
+- **PermissionsPage** (`/permissions`) — matriz visual editable por grupo, toggle inmediato vía API
+- **WorkOrdersPage** — botón "Iniciar inspección" para OTs en estado `Assigned`
+
+**Mobile — restructuración de tabs y fixes:**
+- **Estructura nueva**: `(app)/_layout.tsx` = Stack; `(app)/(tabs)/_layout.tsx` = Tabs solo con Agenda y Órdenes
+- **Signature fix**: `handleSave()` llama `readSignature()`, `onOK` ejecuta mutación, `onEmpty` muestra alerta — firma funciona correctamente
+- **Findings fix**: `JsonStringEnumConverter` en backend (enum `FindingSeverity` ya no falla)
+- **Navigation fix**: `work-order/[id].tsx` navega a `/findings/{inspectionId}` (no `workOrderId`)
+
+**Flujo completo verificado vía API:**
+Crear OT → Asignar técnico → Iniciar → Registrar hallazgo → Capturar firma → Submit → Aprobar admin → Estado `Completed`
 
 ---
 

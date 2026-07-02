@@ -1,4 +1,5 @@
 using GasApp.Application.Common.Interfaces;
+using GasApp.Domain.Entities.Inspections;
 using GasApp.Domain.Enums;
 using GasApp.Domain.Exceptions;
 using GasApp.Domain.Repositories;
@@ -8,6 +9,7 @@ namespace GasApp.Application.WorkOrders.Commands.StartWorkOrder;
 
 public class StartWorkOrderHandler(
     IWorkOrderRepository workOrderRepo,
+    IInspectionRepository inspectionRepo,
     ICurrentUserService currentUser,
     IUnitOfWork unitOfWork)
     : IRequestHandler<StartWorkOrderCommand>
@@ -22,6 +24,20 @@ public class StartWorkOrderHandler(
             throw new DomainException("Solo el técnico asignado puede iniciar esta orden.");
 
         workOrder.Start();
+
+        // Crear la inspección si no existe ya
+        var existing = await inspectionRepo.GetByWorkOrderIdAsync(workOrder.Id, cancellationToken);
+        if (existing is null)
+        {
+            var techId = workOrder.AssignedTechnicianId
+                ?? throw new DomainException("La orden debe tener un técnico asignado.");
+
+            var inspection = Inspection.Create(workOrder.Id, techId);
+            // Pending → PreCheck → InProgress para habilitar el flujo del técnico
+            inspection.TransitionStatus(InspectionStatus.PreCheck, UserRole.Technician);
+            inspection.TransitionStatus(InspectionStatus.InProgress, UserRole.Technician);
+            await inspectionRepo.AddAsync(inspection, cancellationToken);
+        }
 
         workOrderRepo.Update(workOrder);
         await unitOfWork.SaveChangesAsync(cancellationToken);

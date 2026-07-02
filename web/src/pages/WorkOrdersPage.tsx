@@ -95,6 +95,11 @@ export function WorkOrdersPage() {
     },
   })
 
+  const startMutation = useMutation({
+    mutationFn: (id: string) => api.post(`/work-orders/${id}/start`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['work-orders'] }),
+  })
+
   function onCreateSubmit(values: CreateForm) {
     createMutation.mutate(values)
   }
@@ -153,7 +158,7 @@ export function WorkOrdersPage() {
                     {statusLabel[o.status] ?? o.status}
                   </Badge>
                 </td>
-                <td className="px-4 py-3">
+                <td className="px-4 py-3 flex items-center gap-3">
                   {(o.status === 'Draft' || o.status === 'Scheduled') && (
                     <button
                       onClick={() => { setAssigningId(o.id); assignForm.reset() }}
@@ -162,8 +167,14 @@ export function WorkOrdersPage() {
                       Asignar técnico
                     </button>
                   )}
-                  {o.assignedTechnicianId && o.status === 'Assigned' && (
-                    <span className="text-xs text-gray-500">Asignada</span>
+                  {o.status === 'Assigned' && (
+                    <button
+                      onClick={() => startMutation.mutate(o.id)}
+                      disabled={startMutation.isPending}
+                      className="text-xs font-medium text-purple-600 hover:underline disabled:opacity-50"
+                    >
+                      Iniciar inspección
+                    </button>
                   )}
                 </td>
               </tr>

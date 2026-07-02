@@ -6,7 +6,8 @@ namespace GasApp.Application.WorkOrders.Queries.GetWorkOrderById;
 
 public class GetWorkOrderByIdHandler(
     IWorkOrderRepository workOrderRepo,
-    ILocationRepository locationRepo)
+    ILocationRepository locationRepo,
+    IInspectionRepository inspectionRepo)
     : IRequestHandler<GetWorkOrderByIdQuery, WorkOrderDetailDto>
 {
     public async Task<WorkOrderDetailDto> Handle(GetWorkOrderByIdQuery request, CancellationToken cancellationToken)
@@ -16,6 +17,8 @@ public class GetWorkOrderByIdHandler(
 
         var location = await locationRepo.GetByIdWithClientAsync(workOrder.LocationId, cancellationToken)
             ?? throw new NotFoundException("Sede", workOrder.LocationId);
+
+        var inspection = await inspectionRepo.GetByWorkOrderIdAsync(workOrder.Id, cancellationToken);
 
         return new WorkOrderDetailDto(
             workOrder.Id,
@@ -32,7 +35,8 @@ public class GetWorkOrderByIdHandler(
             new WorkOrderClientDto(
                 location.Contract.Client.BusinessName,
                 location.Contract.Client.ContactPhone
-            )
+            ),
+            inspection?.Id
         );
     }
 }
