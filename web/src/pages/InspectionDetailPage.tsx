@@ -27,7 +27,7 @@ const severityColor: Record<string, string> = {
 }
 
 export function InspectionDetailPage() {
-  const { id } = useParams({ from: '/inspections/$id' })
+  const { id } = useParams({ strict: false }) as { id: string }
   const navigate = useNavigate()
   const qc = useQueryClient()
   const [supervisorNotes, setSupervisorNotes] = useState('')

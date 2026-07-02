@@ -1,67 +1,67 @@
 import { useRef, useState } from 'react'
-import { View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, ScrollView, TextInput } from 'react-native'
+import {
+  View, Text, TouchableOpacity, StyleSheet, Alert,
+  ActivityIndicator, ScrollView, TextInput, Modal, Image, Dimensions,
+} from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import SignatureCanvas from 'react-native-signature-canvas'
 import { api } from '@/lib/api'
 
+const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window')
+
 export default function SignatureScreen() {
   const { inspectionId } = useLocalSearchParams<{ inspectionId: string }>()
   const router = useRouter()
   const queryClient = useQueryClient()
   const sigRef = useRef<any>(null)
+
   const [signerName, setSignerName] = useState('')
   const [signerDocument, setSignerDocument] = useState('')
-  const [signatureSaved, setSignatureSaved] = useState(false)
+  const [signatureData, setSignatureData] = useState<string | null>(null)
+  const [showCanvas, setShowCanvas] = useState(false)
   const [hasDraw, setHasDraw] = useState(false)
-  // guardamos si el usuario presionó "Guardar" para saber si ejecutar la mutación al llegar onOK
   const pendingSave = useRef(false)
 
-  const signatureMutation = useMutation({
+  const submitMutation = useMutation({
     mutationFn: (sigData: string) =>
       api.post(`/inspections/${inspectionId}/signature`, {
         signerName: signerName.trim(),
         signatureData: sigData,
         signerDocument: signerDocument.trim() || null,
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['inspection', inspectionId] })
-      setSignatureSaved(true)
-    },
-    onError: (err: any) => {
-      Alert.alert('Error', err.response?.data?.detail ?? 'No se pudo guardar la firma')
-    },
-  })
-
-  const submitMutation = useMutation({
-    mutationFn: () =>
-      api.post(`/inspections/${inspectionId}/submit`, { technicianNotes: null }),
+      }).then(() =>
+        api.post(`/inspections/${inspectionId}/submit`, { technicianNotes: null })
+      ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['work-order'] })
       queryClient.invalidateQueries({ queryKey: ['agenda'] })
       Alert.alert(
         'Inspección finalizada',
-        'La inspección fue enviada para revisión correctamente.',
+        'La firma fue capturada y la inspección fue enviada para revisión.',
         [{ text: 'OK', onPress: () => router.replace('/(app)/agenda') }]
       )
     },
     onError: (err: any) => {
-      Alert.alert('Error', err.response?.data?.detail ?? 'No se pudo finalizar la inspección')
+      Alert.alert('Error', err.response?.data?.message ?? 'No se pudo finalizar')
     },
   })
 
-  function handleSave() {
+  function openCanvas() {
     if (!signerName.trim()) {
-      Alert.alert('Requerido', 'Ingresa el nombre del firmante')
+      Alert.alert('Requerido', 'Ingresa el nombre del firmante antes de firmar')
       return
     }
+    setHasDraw(false)
+    setShowCanvas(true)
+  }
+
+  function handleAccept() {
     if (!hasDraw) {
-      Alert.alert('Requerido', 'Dibuja la firma en el recuadro')
+      Alert.alert('Requerido', 'Dibuja la firma antes de aceptar')
       return
     }
     pendingSave.current = true
-    // readSignature dispara onOK con el base64 si hay trazos, o onEmpty si está vacío
     sigRef.current?.readSignature()
   }
 
@@ -70,21 +70,35 @@ export default function SignatureScreen() {
     setHasDraw(false)
   }
 
-  // Se dispara cuando readSignature() encuentra trazos
   function handleOK(sig: string) {
-    if (pendingSave.current) {
-      pendingSave.current = false
-      signatureMutation.mutate(sig)
-    }
+    if (!pendingSave.current) return
+    pendingSave.current = false
+    setSignatureData(sig)
+    setShowCanvas(false)
   }
 
-  // Se dispara cuando readSignature() encuentra el canvas vacío
   function handleEmpty() {
     if (pendingSave.current) {
       pendingSave.current = false
-      Alert.alert('Requerido', 'Dibuja la firma en el recuadro')
+      Alert.alert('Requerido', 'Dibuja la firma antes de aceptar')
     }
   }
+
+  function handleGuardar() {
+    if (!signerName.trim()) {
+      Alert.alert('Requerido', 'Ingresa el nombre del firmante')
+      return
+    }
+    if (!signatureData) {
+      Alert.alert('Requerido', 'Captura la firma antes de guardar')
+      return
+    }
+    submitMutation.mutate(signatureData)
+  }
+
+  // Dimensiones para el canvas rotado: ocupa toda la pantalla como si fuera landscape
+  const canvasW = SCREEN_H   // ancho del canvas = alto de pantalla (paisaje)
+  const canvasH = SCREEN_W   // alto del canvas  = ancho de pantalla (paisaje)
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -96,92 +110,105 @@ export default function SignatureScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-        {!signatureSaved ? (
-          <>
-            <Text style={styles.label}>Nombre del firmante *</Text>
-            <TextInput
-              style={styles.input}
-              value={signerName}
-              onChangeText={setSignerName}
-              placeholder="Nombre completo"
-              autoCapitalize="words"
-            />
+        <Text style={styles.label}>Nombre del firmante *</Text>
+        <TextInput
+          style={styles.input}
+          value={signerName}
+          onChangeText={setSignerName}
+          placeholder="Nombre completo"
+          autoCapitalize="words"
+        />
 
-            <Text style={styles.label}>Documento (opcional)</Text>
-            <TextInput
-              style={styles.input}
-              value={signerDocument}
-              onChangeText={setSignerDocument}
-              placeholder="Cédula o NIT"
-              keyboardType="numeric"
-            />
+        <Text style={styles.label}>Documento (opcional)</Text>
+        <TextInput
+          style={styles.input}
+          value={signerDocument}
+          onChangeText={setSignerDocument}
+          placeholder="Cédula o NIT"
+          keyboardType="numeric"
+        />
 
-            <Text style={styles.label}>Firma *</Text>
-            <View style={styles.signatureContainer}>
+        <Text style={styles.label}>Firma *</Text>
+
+        {signatureData ? (
+          <View style={styles.previewContainer}>
+            <Image
+              source={{ uri: signatureData }}
+              style={styles.previewImage}
+              resizeMode="contain"
+            />
+            <TouchableOpacity style={styles.resignBtn} onPress={openCanvas}>
+              <Text style={styles.resignBtnText}>Volver a firmar</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <TouchableOpacity style={styles.signBtn} onPress={openCanvas}>
+            <Text style={styles.signBtnIcon}>✍️</Text>
+            <Text style={styles.signBtnText}>Toca para firmar</Text>
+            <Text style={styles.signBtnHint}>Se abrirá en modo horizontal</Text>
+          </TouchableOpacity>
+        )}
+
+        <TouchableOpacity
+          style={[styles.saveBtn, (!signatureData || submitMutation.isPending) && styles.btnDisabled]}
+          onPress={handleGuardar}
+          disabled={!signatureData || submitMutation.isPending}
+        >
+          {submitMutation.isPending
+            ? <ActivityIndicator color="#fff" />
+            : <Text style={styles.saveBtnText}>Guardar firma y finalizar inspección</Text>
+          }
+        </TouchableOpacity>
+      </ScrollView>
+
+      {/* Modal pantalla completa — canvas rotado 90° para simular landscape */}
+      <Modal visible={showCanvas} animationType="fade" statusBarTranslucent>
+        <View style={styles.modalBg}>
+          {/* Contenedor rotado */}
+          <View style={[styles.rotatedWrapper, { width: canvasW, height: canvasH }]}>
+
+            {/* Barra superior (izquierda en real, arriba en visual) */}
+            <View style={styles.canvasBar}>
+              <TouchableOpacity onPress={() => setShowCanvas(false)} style={styles.canvasBarBtn}>
+                <Text style={styles.canvasBarBtnText}>✕  Cancelar</Text>
+              </TouchableOpacity>
+              <Text style={styles.canvasBarTitle}>Firma aquí</Text>
+              <View style={styles.canvasBarRight}>
+                <TouchableOpacity onPress={handleClear} style={styles.canvasBarBtn}>
+                  <Text style={styles.canvasBarBtnText}>🗑  Limpiar</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={handleAccept} style={styles.acceptBtn}>
+                  <Text style={styles.acceptBtnText}>✓  Aceptar</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Canvas */}
+            <View style={{ flex: 1 }}>
               <SignatureCanvas
                 ref={sigRef}
                 onOK={handleOK}
                 onEmpty={handleEmpty}
                 onBegin={() => setHasDraw(true)}
                 descriptionText=""
-                clearText="Limpiar"
-                confirmText="Confirmar"
                 webStyle={`
-                  .m-signature-pad { box-shadow: none; border: none; }
-                  .m-signature-pad--body { border: none; }
+                  .m-signature-pad { box-shadow: none; border: none; width: 100%; height: 100%; }
+                  .m-signature-pad--body { border: none; width: 100%; height: 100%; }
                   .m-signature-pad--footer { display: none; }
-                  body { margin: 0; }
+                  body { margin: 0; padding: 0; background: #fff; }
                 `}
-                style={{ flex: 1 }}
+                style={{ flex: 1, backgroundColor: '#fff' }}
               />
-              {hasDraw && (
-                <View style={styles.signedBadge}>
-                  <Text style={styles.signedText}>✓ Firma capturada</Text>
-                </View>
-              )}
             </View>
 
-            <View style={styles.btnRow}>
-              <TouchableOpacity style={styles.clearBtn} onPress={handleClear}>
-                <Text style={styles.clearBtnText}>Limpiar</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.saveBtn, signatureMutation.isPending && styles.btnDisabled]}
-                onPress={handleSave}
-                disabled={signatureMutation.isPending}
-              >
-                {signatureMutation.isPending
-                  ? <ActivityIndicator color="#fff" />
-                  : <Text style={styles.saveBtnText}>Guardar firma</Text>
-                }
-              </TouchableOpacity>
-            </View>
-          </>
-        ) : (
-          <View style={styles.successContainer}>
-            <View style={styles.successIcon}>
-              <Text style={styles.successIconText}>✓</Text>
-            </View>
-            <Text style={styles.successTitle}>Firma registrada</Text>
-            <Text style={styles.successSubtitle}>
-              La firma de {signerName} fue guardada correctamente.
-            </Text>
-            <TouchableOpacity
-              style={[styles.finishBtn, submitMutation.isPending && styles.btnDisabled]}
-              onPress={() => submitMutation.mutate()}
-              disabled={submitMutation.isPending}
-            >
-              {submitMutation.isPending
-                ? <ActivityIndicator color="#fff" />
-                : <Text style={styles.finishBtnText}>Finalizar inspección →</Text>
-              }
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.backLink} onPress={() => router.back()}>
-              <Text style={styles.backLinkText}>Volver al detalle sin finalizar</Text>
-            </TouchableOpacity>
+            {!hasDraw && (
+              <View style={styles.hintOverlay}>
+                <Text style={styles.hintText}>← Desliza para firmar →</Text>
+              </View>
+            )}
           </View>
-        )}
-      </ScrollView>
+        </View>
+      </Modal>
     </SafeAreaView>
   )
 }
@@ -201,40 +228,59 @@ const styles = StyleSheet.create({
     height: 44, borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 8,
     paddingHorizontal: 12, fontSize: 14, color: '#111827', backgroundColor: '#fff',
   },
-  signatureContainer: {
-    height: 250, borderWidth: 1.5, borderColor: '#D1D5DB', borderRadius: 12,
-    overflow: 'hidden', backgroundColor: '#fff', marginTop: 8,
+  signBtn: {
+    marginTop: 8, height: 120, borderWidth: 2, borderColor: '#BFDBFE',
+    borderStyle: 'dashed', borderRadius: 12, backgroundColor: '#EFF6FF',
+    alignItems: 'center', justifyContent: 'center', gap: 6,
   },
-  signedBadge: {
-    position: 'absolute', top: 8, right: 8,
-    backgroundColor: '#D1FAE5', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 99,
+  signBtnIcon: { fontSize: 28 },
+  signBtnText: { fontSize: 16, fontWeight: '700', color: '#1D4ED8' },
+  signBtnHint: { fontSize: 12, color: '#93C5FD' },
+  previewContainer: {
+    marginTop: 8, borderWidth: 1.5, borderColor: '#D1FAE5',
+    borderRadius: 12, overflow: 'hidden', backgroundColor: '#fff',
   },
-  signedText: { fontSize: 12, fontWeight: '600', color: '#065F46' },
-  btnRow: { flexDirection: 'row', gap: 12, marginTop: 24 },
-  clearBtn: {
-    flex: 1, height: 48, borderRadius: 10, borderWidth: 1.5, borderColor: '#D1D5DB',
-    alignItems: 'center', justifyContent: 'center',
+  previewImage: { width: '100%', height: 160 },
+  resignBtn: {
+    padding: 10, alignItems: 'center',
+    backgroundColor: '#F9FAFB', borderTopWidth: 1, borderTopColor: '#E5E7EB',
   },
-  clearBtnText: { fontSize: 15, fontWeight: '600', color: '#374151' },
+  resignBtnText: { fontSize: 13, color: '#6B7280', fontWeight: '500' },
   saveBtn: {
-    flex: 2, height: 48, borderRadius: 10, backgroundColor: '#1D4ED8',
+    marginTop: 28, height: 52, borderRadius: 12, backgroundColor: '#059669',
     alignItems: 'center', justifyContent: 'center',
   },
-  btnDisabled: { opacity: 0.6 },
-  saveBtnText: { fontSize: 15, fontWeight: '700', color: '#fff' },
-  successContainer: { alignItems: 'center', paddingTop: 40, paddingHorizontal: 16 },
-  successIcon: {
-    width: 72, height: 72, borderRadius: 36, backgroundColor: '#D1FAE5',
-    alignItems: 'center', justifyContent: 'center', marginBottom: 16,
+  btnDisabled: { opacity: 0.4 },
+  saveBtnText: { fontSize: 16, fontWeight: '700', color: '#fff' },
+
+  // Modal
+  modalBg: {
+    flex: 1, backgroundColor: '#000',
+    alignItems: 'center', justifyContent: 'center',
   },
-  successIconText: { fontSize: 32, color: '#065F46' },
-  successTitle: { fontSize: 20, fontWeight: '700', color: '#111827', marginBottom: 8 },
-  successSubtitle: { fontSize: 14, color: '#6B7280', textAlign: 'center', marginBottom: 32 },
-  finishBtn: {
-    width: '100%', height: 52, borderRadius: 12, backgroundColor: '#059669',
-    alignItems: 'center', justifyContent: 'center', marginBottom: 12,
+  rotatedWrapper: {
+    transform: [{ rotate: '90deg' }],
+    overflow: 'hidden',
+    flexDirection: 'column',
   },
-  finishBtnText: { fontSize: 16, fontWeight: '700', color: '#fff' },
-  backLink: { paddingVertical: 8 },
-  backLinkText: { fontSize: 13, color: '#9CA3AF' },
+  canvasBar: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    backgroundColor: '#1E293B', paddingHorizontal: 16, paddingVertical: 10,
+  },
+  canvasBarTitle: { fontSize: 15, fontWeight: '700', color: '#fff' },
+  canvasBarRight: { flexDirection: 'row', gap: 10, alignItems: 'center' },
+  canvasBarBtn: {
+    paddingHorizontal: 12, paddingVertical: 6,
+    borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.12)',
+  },
+  canvasBarBtnText: { color: '#CBD5E1', fontWeight: '600', fontSize: 13 },
+  acceptBtn: {
+    paddingHorizontal: 16, paddingVertical: 6,
+    borderRadius: 8, backgroundColor: '#059669',
+  },
+  acceptBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
+  hintOverlay: {
+    position: 'absolute', bottom: 16, left: 0, right: 0, alignItems: 'center',
+  },
+  hintText: { color: '#9CA3AF', fontSize: 13 },
 })

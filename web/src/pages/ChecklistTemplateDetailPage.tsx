@@ -47,7 +47,7 @@ const itemTypeColor: Record<string, string> = {
 }
 
 export function ChecklistTemplateDetailPage() {
-  const { id } = useParams({ from: '/checklist-templates/$id' })
+  const { id } = useParams({ strict: false }) as { id: string }
   const navigate = useNavigate()
   const qc = useQueryClient()
 
@@ -115,7 +115,7 @@ export function ChecklistTemplateDetailPage() {
   return (
     <div className="p-8 max-w-3xl">
       <button
-        onClick={() => navigate({ to: '/checklist-templates' })}
+        onClick={() => navigate({ to: '/checklist-templates' as any })}
         className="flex items-center gap-1 text-sm text-blue-600 hover:underline mb-4"
       >
         <ChevronLeft className="h-4 w-4" /> Volver a plantillas

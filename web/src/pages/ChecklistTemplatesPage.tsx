@@ -85,7 +85,7 @@ export function ChecklistTemplatesPage() {
           {templates.map(t => (
             <button
               key={t.id}
-              onClick={() => navigate({ to: '/checklist-templates/$id', params: { id: t.id } })}
+              onClick={() => navigate({ to: `/checklist-templates/${t.id}` })}
               className="w-full flex items-center justify-between rounded-xl border border-gray-200 bg-white px-5 py-4 hover:border-blue-300 hover:bg-blue-50 transition-colors text-left"
             >
               <div className="flex items-center gap-4">
