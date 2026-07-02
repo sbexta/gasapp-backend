@@ -1,7 +1,9 @@
 using GasApp.Application.Common.Interfaces;
 using GasApp.Application.WorkOrders.Commands.AssignTechnician;
+using GasApp.Application.WorkOrders.Commands.CancelWorkOrder;
 using GasApp.Application.WorkOrders.Commands.CreateWorkOrder;
 using GasApp.Application.WorkOrders.Commands.StartWorkOrder;
+using GasApp.Application.WorkOrders.Commands.UpdateWorkOrder;
 using GasApp.Application.WorkOrders.Queries.GetTechnicianAgenda;
 using GasApp.Application.WorkOrders.Queries.GetWorkOrderById;
 using GasApp.Application.WorkOrders.Queries.GetWorkOrders;
@@ -82,6 +84,24 @@ public class WorkOrdersController(IMediator mediator, ICurrentUserService curren
         await mediator.Send(new StartWorkOrderCommand(id), ct);
         return NoContent();
     }
+
+    [HttpPut("{id:guid}")]
+    [Authorize(Roles = "Admin,Supervisor")]
+    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateWorkOrderRequest request, CancellationToken ct)
+    {
+        await mediator.Send(new UpdateWorkOrderCommand(id, request.ScheduledDate, request.Notes), ct);
+        return NoContent();
+    }
+
+    [HttpPost("{id:guid}/cancel")]
+    [Authorize(Roles = "Admin,Supervisor")]
+    public async Task<IActionResult> Cancel(Guid id, [FromBody] CancelWorkOrderRequest request, CancellationToken ct)
+    {
+        await mediator.Send(new CancelWorkOrderCommand(id, request.Reason), ct);
+        return NoContent();
+    }
 }
 
 public record AssignTechnicianRequest(Guid TechnicianId);
+public record UpdateWorkOrderRequest(DateTime ScheduledDate, string? Notes);
+public record CancelWorkOrderRequest(string Reason);

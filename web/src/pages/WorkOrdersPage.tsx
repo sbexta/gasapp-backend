@@ -19,6 +19,9 @@ const statusVariant: Record<string, 'default' | 'success' | 'warning' | 'destruc
   InProgress: 'default', Completed: 'success', Cancelled: 'destructive',
 }
 
+const EDITABLE_STATUSES = ['Draft', 'Scheduled', 'Assigned']
+const CANCELLABLE_STATUSES = ['Draft', 'Scheduled', 'Assigned', 'InProgress']
+
 const createSchema = z.object({
   orderNumber: z.string().min(1, 'Requerido'),
   locationId: z.string().min(1, 'Selecciona una sede'),
@@ -27,6 +30,12 @@ const createSchema = z.object({
   notes: z.string().optional(),
 })
 type CreateForm = z.infer<typeof createSchema>
+
+const editSchema = z.object({
+  scheduledDate: z.string().min(1, 'Requerido'),
+  notes: z.string().optional(),
+})
+type EditForm = z.infer<typeof editSchema>
 
 const assignSchema = z.object({
   technicianId: z.string().min(1, 'Selecciona un técnico'),
@@ -38,6 +47,9 @@ export function WorkOrdersPage() {
   const [statusFilter, setStatusFilter] = useState('')
   const [showCreate, setShowCreate] = useState(false)
   const [assigningId, setAssigningId] = useState<string | null>(null)
+  const [editingOrder, setEditingOrder] = useState<WorkOrderDto | null>(null)
+  const [cancellingOrder, setCancellingOrder] = useState<WorkOrderDto | null>(null)
+  const [cancelReason, setCancelReason] = useState('')
 
   const { data, isLoading } = useQuery({
     queryKey: ['work-orders', statusFilter],
@@ -67,6 +79,7 @@ export function WorkOrdersPage() {
   })
 
   const createForm = useForm<CreateForm>({ resolver: zodResolver(createSchema) })
+  const editForm = useForm<EditForm>({ resolver: zodResolver(editSchema) })
   const assignForm = useForm<AssignForm>({ resolver: zodResolver(assignSchema) })
 
   const createMutation = useMutation({
@@ -82,6 +95,29 @@ export function WorkOrdersPage() {
       qc.invalidateQueries({ queryKey: ['work-orders'] })
       setShowCreate(false)
       createForm.reset()
+    },
+  })
+
+  const editMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: EditForm }) =>
+      api.put(`/work-orders/${id}`, {
+        scheduledDate: new Date(data.scheduledDate).toISOString(),
+        notes: data.notes || null,
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['work-orders'] })
+      setEditingOrder(null)
+      editForm.reset()
+    },
+  })
+
+  const cancelMutation = useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason: string }) =>
+      api.post(`/work-orders/${id}/cancel`, { reason }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['work-orders'] })
+      setCancellingOrder(null)
+      setCancelReason('')
     },
   })
 
@@ -102,6 +138,19 @@ export function WorkOrdersPage() {
 
   function onCreateSubmit(values: CreateForm) {
     createMutation.mutate(values)
+  }
+
+  function onEditSubmit(values: EditForm) {
+    if (!editingOrder) return
+    editMutation.mutate({ id: editingOrder.id, data: values })
+  }
+
+  function openEdit(order: WorkOrderDto) {
+    const dateStr = order.scheduledDate
+      ? new Date(order.scheduledDate).toISOString().split('T')[0]
+      : ''
+    editForm.reset({ scheduledDate: dateStr, notes: order.notes ?? '' })
+    setEditingOrder(order)
   }
 
   function onAssignSubmit(values: AssignForm) {
@@ -158,24 +207,42 @@ export function WorkOrdersPage() {
                     {statusLabel[o.status] ?? o.status}
                   </Badge>
                 </td>
-                <td className="px-4 py-3 flex items-center gap-3">
-                  {(o.status === 'Draft' || o.status === 'Scheduled') && (
-                    <button
-                      onClick={() => { setAssigningId(o.id); assignForm.reset() }}
-                      className="text-xs font-medium text-blue-600 hover:underline"
-                    >
-                      Asignar técnico
-                    </button>
-                  )}
-                  {o.status === 'Assigned' && (
-                    <button
-                      onClick={() => startMutation.mutate(o.id)}
-                      disabled={startMutation.isPending}
-                      className="text-xs font-medium text-purple-600 hover:underline disabled:opacity-50"
-                    >
-                      Iniciar inspección
-                    </button>
-                  )}
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-3">
+                    {(o.status === 'Draft' || o.status === 'Scheduled') && (
+                      <button
+                        onClick={() => { setAssigningId(o.id); assignForm.reset() }}
+                        className="text-xs font-medium text-blue-600 hover:underline"
+                      >
+                        Asignar técnico
+                      </button>
+                    )}
+                    {o.status === 'Assigned' && (
+                      <button
+                        onClick={() => startMutation.mutate(o.id)}
+                        disabled={startMutation.isPending}
+                        className="text-xs font-medium text-purple-600 hover:underline disabled:opacity-50"
+                      >
+                        Iniciar inspección
+                      </button>
+                    )}
+                    {EDITABLE_STATUSES.includes(o.status) && (
+                      <button
+                        onClick={() => openEdit(o)}
+                        className="text-xs font-medium text-gray-600 hover:underline"
+                      >
+                        Editar
+                      </button>
+                    )}
+                    {CANCELLABLE_STATUSES.includes(o.status) && (
+                      <button
+                        onClick={() => { setCancellingOrder(o); setCancelReason('') }}
+                        className="text-xs font-medium text-red-500 hover:underline"
+                      >
+                        Cancelar
+                      </button>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}
@@ -259,6 +326,81 @@ export function WorkOrdersPage() {
                 </Button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal editar orden */}
+      {editingOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+            <h2 className="mb-1 text-lg font-semibold text-gray-900">Editar orden</h2>
+            <p className="mb-5 text-sm text-gray-500">{editingOrder.orderNumber}</p>
+            <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4">
+              <div>
+                <Label htmlFor="edit-scheduledDate">Fecha programada</Label>
+                <Input id="edit-scheduledDate" type="date" {...editForm.register('scheduledDate')} />
+                {editForm.formState.errors.scheduledDate && (
+                  <p className="mt-1 text-xs text-red-500">{editForm.formState.errors.scheduledDate.message}</p>
+                )}
+              </div>
+
+              <div>
+                <Label htmlFor="edit-notes">Notas (opcional)</Label>
+                <Input id="edit-notes" placeholder="Observaciones adicionales..." {...editForm.register('notes')} />
+              </div>
+
+              {editMutation.isError && (
+                <p className="text-sm text-red-500">Error al guardar los cambios.</p>
+              )}
+
+              <div className="flex justify-end gap-3 pt-2">
+                <Button type="button" variant="outline" onClick={() => { setEditingOrder(null); editForm.reset() }}>
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={editMutation.isPending}>
+                  {editMutation.isPending ? 'Guardando...' : 'Guardar cambios'}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal confirmar cancelación */}
+      {cancellingOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+            <h2 className="mb-1 text-lg font-semibold text-gray-900">Cancelar orden</h2>
+            <p className="mb-4 text-sm text-gray-500">
+              ¿Seguro que quieres cancelar <span className="font-medium text-gray-700">{cancellingOrder.orderNumber}</span>? Esta acción no se puede deshacer.
+            </p>
+            <div className="mb-4">
+              <Label htmlFor="cancel-reason">Motivo de cancelación</Label>
+              <Input
+                id="cancel-reason"
+                placeholder="Ej: Cliente solicitó reprogramación..."
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+              />
+            </div>
+
+            {cancelMutation.isError && (
+              <p className="mb-3 text-sm text-red-500">Error al cancelar la orden.</p>
+            )}
+
+            <div className="flex justify-end gap-3">
+              <Button type="button" variant="outline" onClick={() => { setCancellingOrder(null); setCancelReason('') }}>
+                Volver
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => cancelMutation.mutate({ id: cancellingOrder.id, reason: cancelReason || 'Cancelada por administrador' })}
+                disabled={cancelMutation.isPending}
+              >
+                {cancelMutation.isPending ? 'Cancelando...' : 'Confirmar cancelación'}
+              </Button>
+            </div>
           </div>
         </div>
       )}

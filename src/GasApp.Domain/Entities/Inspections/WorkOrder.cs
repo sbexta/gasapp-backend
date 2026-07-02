@@ -72,6 +72,16 @@ public class WorkOrder : AuditableEntity
         Touch();
     }
 
+    public void UpdateDetails(DateTime scheduledDate, string? notes)
+    {
+        if (Status == WorkOrderStatus.InProgress || Status == WorkOrderStatus.Completed || Status == WorkOrderStatus.Cancelled)
+            throw new DomainException("Solo se pueden editar órdenes en estado Borrador, Programada o Asignada.");
+
+        ScheduledDate = scheduledDate;
+        Notes = notes?.Trim();
+        Touch();
+    }
+
     public void Cancel(string reason)
     {
         if (Status == WorkOrderStatus.Completed)
