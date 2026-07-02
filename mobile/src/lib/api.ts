@@ -1,7 +1,9 @@
 import axios from 'axios'
 import * as SecureStore from 'expo-secure-store'
 
-const BASE_URL = 'https://192.168.1.100:7051/api/v1'
+// Cambia por la IP de tu PC (ver con ipconfig → Dirección IPv4)
+// Usa http (no https) para evitar el certificado de desarrollo
+const BASE_URL = 'http://192.168.0.11:5289/api/v1'
 
 export const api = axios.create({
   baseURL: BASE_URL,
@@ -22,7 +24,7 @@ api.interceptors.response.use(
       original._retry = true
       try {
         const refreshToken = await SecureStore.getItemAsync('refresh_token')
-        const { data } = await axios.post(`${BASE_URL}/auth/refresh`, { refreshToken })
+        const { data } = await axios.post(`${BASE_URL}/auth/refresh-token`, { refreshToken })
         await SecureStore.setItemAsync('access_token', data.accessToken)
         await SecureStore.setItemAsync('refresh_token', data.refreshToken)
         original.headers.Authorization = `Bearer ${data.accessToken}`
