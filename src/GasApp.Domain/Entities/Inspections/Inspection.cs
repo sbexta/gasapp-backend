@@ -54,8 +54,8 @@ public class Inspection : AuditableEntity
 
     public void Cancel()
     {
-        if (Status == InspectionStatus.Completed)
-            throw new DomainException("No se puede cancelar una inspección ya completada.");
+        if (Status == InspectionStatus.Completed || Status == InspectionStatus.Rejected)
+            return;
 
         Status = InspectionStatus.Rejected;
         Touch();
