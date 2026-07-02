@@ -12,6 +12,14 @@ public class ContractRepository(AppDbContext context) : IContractRepository
     public async Task<Contract?> GetByNumberAsync(string contractNumber, CancellationToken ct = default)
         => await context.Contracts.FirstOrDefaultAsync(c => c.ContractNumber == contractNumber, ct);
 
+    public async Task<IReadOnlyList<Contract>> GetAllAsync(Guid? clientId = null, CancellationToken ct = default)
+    {
+        var query = context.Contracts.Include(c => c.Client).AsQueryable();
+        if (clientId.HasValue)
+            query = query.Where(c => c.ClientId == clientId.Value);
+        return await query.OrderByDescending(c => c.CreatedAt).ToListAsync(ct);
+    }
+
     public async Task<IReadOnlyList<Contract>> GetByClientIdAsync(Guid clientId, CancellationToken ct = default)
         => await context.Contracts
             .Where(c => c.ClientId == clientId)

@@ -15,6 +15,14 @@ public class LocationRepository(AppDbContext context) : ILocationRepository
                 .ThenInclude(c => c.Client)
             .FirstOrDefaultAsync(l => l.Id == id, ct);
 
+    public async Task<IReadOnlyList<Location>> GetAllActiveAsync(CancellationToken ct = default)
+        => await context.Locations
+            .Include(l => l.Contract)
+                .ThenInclude(c => c.Client)
+            .Where(l => l.IsActive)
+            .OrderBy(l => l.Name)
+            .ToListAsync(ct);
+
     public async Task<IReadOnlyList<Location>> GetByContractIdAsync(Guid contractId, CancellationToken ct = default)
         => await context.Locations
             .Where(l => l.ContractId == contractId)

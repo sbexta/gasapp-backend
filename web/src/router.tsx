@@ -4,6 +4,9 @@ import { LoginPage } from '@/pages/LoginPage'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { ClientsPage } from '@/pages/ClientsPage'
 import { WorkOrdersPage } from '@/pages/WorkOrdersPage'
+import { LocationsPage } from '@/pages/LocationsPage'
+import { InspectionTypesPage } from '@/pages/InspectionTypesPage'
+import { ContractsPage } from '@/pages/ContractsPage'
 
 const rootRoute = createRootRoute()
 
@@ -47,9 +50,35 @@ const workOrdersRoute = createRoute({
   component: WorkOrdersPage,
 })
 
+const contractsRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/contracts',
+  component: ContractsPage,
+})
+
+const locationsRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/locations',
+  component: LocationsPage,
+})
+
+const inspectionTypesRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/inspection-types',
+  component: InspectionTypesPage,
+})
+
 const routeTree = rootRoute.addChildren([
   loginRoute,
-  appRoute.addChildren([indexRoute, dashboardRoute, clientsRoute, workOrdersRoute]),
+  appRoute.addChildren([
+    indexRoute,
+    dashboardRoute,
+    clientsRoute,
+    contractsRoute,
+    locationsRoute,
+    inspectionTypesRoute,
+    workOrdersRoute,
+  ]),
 ])
 
 export const router = createRouter({ routeTree })

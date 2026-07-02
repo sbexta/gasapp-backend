@@ -59,7 +59,8 @@ src/
 web/                      # Web admin React
   src/
     components/           # UI (Button, Card, Input...) + layout (Sidebar, AppLayout)
-    pages/                # LoginPage, DashboardPage, ClientsPage, WorkOrdersPage
+    pages/                # LoginPage, DashboardPage, ClientsPage, ContractsPage,
+                          # LocationsPage, InspectionTypesPage, WorkOrdersPage
     lib/                  # api.ts (axios + interceptors), utils.ts
     store/                # auth.ts (Zustand)
     types/                # api.ts (DTOs tipados)
@@ -71,7 +72,10 @@ mobile/                   # App móvil Expo
     (auth)/login.tsx      # Pantalla de login
     (app)/agenda.tsx      # Agenda del día del técnico
     (app)/work-orders.tsx # Listado de órdenes
-    (app)/work-order/[id].tsx  # Detalle + botón iniciar
+    (app)/work-order/[id].tsx   # Detalle + botón iniciar
+    (app)/checklist/[workOrderId].tsx  # Checklist de inspección
+    (app)/findings/[inspectionId].tsx  # Hallazgos
+    (app)/signature/[inspectionId].tsx # Firma del cliente
   src/
     lib/api.ts            # Axios + interceptores JWT
     store/auth.ts         # Zustand con expo-secure-store
@@ -155,7 +159,7 @@ cd web
 npm run dev
 # Abre http://localhost:3000
 ```
-Proxy configurado: `/api` → `https://localhost:7051` (backend)
+Proxy configurado: `/api` → `http://localhost:5289` (backend)
 
 ---
 
@@ -179,6 +183,58 @@ Proxy configurado: `/api` → `https://localhost:7051` (backend)
 - `GET /api/v1/work-orders/{id}` — detalle con cliente y sede
 - `POST /api/v1/work-orders/{id}/start` — cambia estado `Assigned → InProgress`
 - `GET /api/v1/work-orders/agenda` — usa el ID del token automáticamente para técnicos
+
+---
+
+### Sprint 5 — COMPLETADO ✅
+**Commit:** `6e8efb2`
+
+**Ejecución del checklist en mobile:**
+- **ChecklistScreen** (`/(app)/checklist/[workOrderId]`) — renderiza secciones e ítems con respuestas tipo YesNo (botones), Text (TextInput) y Numeric (teclado decimal); progreso `{respondidos}/{total}`; navega a firma al terminar
+- **FindingsScreen** (`/(app)/findings/[inspectionId]`) — formulario para registrar hallazgos (descripción, severidad Low/Medium/High/Critical, acción correctiva); lista hallazgos existentes
+- **SignatureScreen** (`/(app)/signature/[inspectionId]`) — canvas táctil con `react-native-signature-canvas`; campos nombre y documento del firmante; guarda base64 PNG
+- **WorkOrderDetailScreen** actualizado — botones "Checklist" y "Hallazgos" visibles cuando estado = `InProgress`
+
+**Nuevos endpoints backend:**
+- `GET /api/v1/inspections/{id}` — detalle con hallazgos
+- `GET /api/v1/inspections/by-work-order/{workOrderId}/checklist` — checklist con respuestas actuales
+- `POST /api/v1/inspections/{id}/responses` — upsert de respuesta a ítem (crea o actualiza)
+- `POST /api/v1/inspections/{id}/findings` — registrar hallazgo
+- `POST /api/v1/inspections/{id}/signature` — capturar firma (base64 PNG)
+- `POST /api/v1/inspections/{id}/evidences` — subir evidencia (multipart)
+
+**Infrastructure:**
+- `LocalFileStorageService` — guarda evidencias en `uploads/{inspectionId}/{guid}_{fileName}`
+- Repositorios: `IChecklistResponseRepository`, `IEvidenceRepository`, `IFindingRepository`, `IInspectionSignatureRepository`
+
+---
+
+### Sprint 6 — COMPLETADO ✅
+**Commit:** (este commit)
+
+**Web admin — módulos de gestión completos:**
+- **ContractsPage** (`/contracts`) — tabla de contratos con filtro por cliente + modal "Nuevo contrato" (cliente, N° contrato, fechas inicio/fin con validación, notas)
+- **LocationsPage** (`/locations`) — tabla de sedes con modal "Nueva sede" (selección cascada cliente → contrato → nombre/dirección/municipio/departamento)
+- **InspectionTypesPage** (`/inspection-types`) — tabla de tipos + modal "Nuevo tipo" (nombre, descripción, requiere certificado)
+- **WorkOrdersPage** actualizado — modal "Nueva orden" (sede, tipo inspección, fecha) + acción "Asignar técnico" por fila con selector de técnicos activos
+- **Sidebar** — nuevos links: Contratos, Sedes, Tipos de inspección
+
+**Nuevos endpoints backend:**
+- `GET /api/v1/contracts` — lista contratos con nombre de cliente, filtrable por `?clientId`
+- `GET /api/v1/locations` — lista sedes activas con nombre del cliente
+- `GET /api/v1/inspection-types` — lista tipos de inspección activos
+- `POST /api/v1/inspection-types` — crear tipo de inspección
+
+**Infrastructure:**
+- `IInspectionTypeRepository` + `InspectionTypeRepository` — nuevo repositorio
+- `GetContractsQuery`, `GetLocationsQuery`, `GetInspectionTypesQuery` — nuevas queries
+- `CreateInspectionTypeCommand` — nuevo command
+
+**Mobile — fix:**
+- Corregido warning "Each child in a list should have a unique key prop" en `WorkOrdersScreen`: el endpoint `/work-orders` devuelve `id` (no `workOrderId`); se creó `WorkOrderSummaryDto` y se actualizó `keyExtractor`
+
+**Flujo completo sin Swagger:**
+Clientes → Contratos → Sedes → Tipos de inspección → Órdenes de trabajo → Asignar técnico
 
 ---
 
@@ -223,7 +279,7 @@ cd mobile && npx expo start --clear
 dotnet test
 ```
 
-**Nota red local (mobile):** el backend escucha en `0.0.0.0:5289`. La IP del PC en `mobile/src/lib/api.ts` debe ser la IP del adaptador Ethernet (`192.168.0.11`). El celular debe estar en la misma red WiFi.
+**Nota red local (mobile):** el backend escucha en `0.0.0.0:5289`. La IP del PC en `mobile/src/lib/api.ts` debe ser la IP WiFi del PC (ver con `ipconfig` → adaptador Wi-Fi → Dirección IPv4). El celular debe estar en la misma red WiFi.
 
 ---
 

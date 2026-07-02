@@ -34,6 +34,7 @@ public static class DependencyInjection
         services.AddScoped<IEvidenceRepository, EvidenceRepository>();
         services.AddScoped<IFindingRepository, FindingRepository>();
         services.AddScoped<IInspectionSignatureRepository, InspectionSignatureRepository>();
+        services.AddScoped<IInspectionTypeRepository, InspectionTypeRepository>();
 
         services.AddScoped<IFileStorageService, LocalFileStorageService>();
 

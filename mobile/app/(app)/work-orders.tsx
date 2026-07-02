@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { api } from '@/lib/api'
 import { ConnectivityBanner } from '@/components/ConnectivityBanner'
-import type { AgendaItemDto } from '@/types/api'
+import type { WorkOrderSummaryDto } from '@/types/api'
 
 const statusLabel: Record<string, string> = {
   Draft: 'Borrador', Scheduled: 'Programada', Assigned: 'Asignada',
@@ -21,7 +21,7 @@ export default function WorkOrdersScreen() {
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['work-orders-all'],
     queryFn: () =>
-      api.get<{ items: AgendaItemDto[] }>('/work-orders?pageSize=50').then((r) => r.data.items),
+      api.get<{ items: WorkOrderSummaryDto[] }>('/work-orders?pageSize=50').then((r) => r.data.items),
   })
 
   return (
@@ -33,13 +33,13 @@ export default function WorkOrdersScreen() {
 
       <FlatList
         data={data ?? []}
-        keyExtractor={(item) => item.workOrderId}
+        keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
         refreshControl={<RefreshControl refreshing={isLoading} onRefresh={refetch} />}
         renderItem={({ item }) => (
           <TouchableOpacity
             style={styles.card}
-            onPress={() => router.push(`/(app)/work-order/${item.workOrderId}`)}
+            onPress={() => router.push(`/(app)/work-order/${item.id}`)}
             activeOpacity={0.7}
           >
             <View style={styles.row}>
@@ -50,7 +50,6 @@ export default function WorkOrdersScreen() {
                 </Text>
               </View>
             </View>
-            <Text style={styles.client}>{item.clientName}</Text>
             <Text style={styles.date}>
               {new Date(item.scheduledDate).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })}
             </Text>
@@ -93,7 +92,6 @@ const styles = StyleSheet.create({
   orderNumber: { fontSize: 15, fontWeight: '700', color: '#111827' },
   badge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 99 },
   badgeText: { fontSize: 11, fontWeight: '600' },
-  client: { fontSize: 13, color: '#374151', marginBottom: 2 },
   date: { fontSize: 12, color: '#9CA3AF' },
   empty: { alignItems: 'center', paddingTop: 60 },
   emptyText: { fontSize: 15, color: '#9CA3AF' },

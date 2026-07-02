@@ -62,5 +62,32 @@ export interface WorkOrderDto {
   notes?: string
 }
 
+export interface ContractDto {
+  id: string
+  contractNumber: string
+  clientId: string
+  clientName: string
+  startDate: string
+  endDate: string
+  status: string
+  notes?: string
+}
+
+export interface LocationDto {
+  id: string
+  name: string
+  address: string
+  municipality: string
+  department: string
+  clientName: string
+}
+
+export interface InspectionTypeDto {
+  id: string
+  name: string
+  description?: string
+  requiresCertificate: boolean
+}
+
 export type ClientType = 'Residential' | 'Commercial' | 'Industrial'
 export type WorkOrderStatus = 'Draft' | 'Scheduled' | 'Assigned' | 'InProgress' | 'Completed' | 'Cancelled'

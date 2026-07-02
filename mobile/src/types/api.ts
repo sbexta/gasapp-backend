@@ -69,6 +69,16 @@ export interface ChecklistItemResponseDto {
   notes: string | null
 }
 
+export interface WorkOrderSummaryDto {
+  id: string
+  orderNumber: string
+  locationId: string
+  assignedTechnicianId?: string
+  scheduledDate: string
+  status: string
+  notes?: string
+}
+
 export interface FindingDto {
   id: string
   description: string

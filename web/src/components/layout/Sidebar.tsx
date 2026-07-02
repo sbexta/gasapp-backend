@@ -1,6 +1,6 @@
 import { Link, useLocation } from '@tanstack/react-router'
 import {
-  LayoutDashboard, Users, Building2, ClipboardList, LogOut, Flame,
+  LayoutDashboard, Users, Building2, ClipboardList, LogOut, Flame, MapPin, ShieldCheck, FileText,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/store/auth'
@@ -8,6 +8,9 @@ import { useAuthStore } from '@/store/auth'
 const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', roles: ['Admin', 'Supervisor', 'Technician'] },
   { to: '/clients', icon: Building2, label: 'Clientes', roles: ['Admin', 'Supervisor'] },
+  { to: '/contracts', icon: FileText, label: 'Contratos', roles: ['Admin', 'Supervisor'] },
+  { to: '/locations', icon: MapPin, label: 'Sedes', roles: ['Admin', 'Supervisor'] },
+  { to: '/inspection-types', icon: ShieldCheck, label: 'Tipos de inspección', roles: ['Admin', 'Supervisor'] },
   { to: '/work-orders', icon: ClipboardList, label: 'Órdenes de trabajo', roles: ['Admin', 'Supervisor'] },
   { to: '/users', icon: Users, label: 'Usuarios', roles: ['Admin'] },
 ]
