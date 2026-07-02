@@ -51,4 +51,13 @@ public class Inspection : AuditableEntity
         AddDomainEvent(new InspectionStatusChangedEvent(Id, previous, target, TechnicianId));
         Touch();
     }
+
+    public void Cancel()
+    {
+        if (Status == InspectionStatus.Completed)
+            throw new DomainException("No se puede cancelar una inspección ya completada.");
+
+        Status = InspectionStatus.Rejected;
+        Touch();
+    }
 }

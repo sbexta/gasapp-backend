@@ -4,7 +4,7 @@ using MediatR;
 
 namespace GasApp.Application.WorkOrders.Commands.CancelWorkOrder;
 
-public class CancelWorkOrderHandler(IWorkOrderRepository repo, IUnitOfWork uow)
+public class CancelWorkOrderHandler(IWorkOrderRepository repo, IInspectionRepository inspectionRepo, IUnitOfWork uow)
     : IRequestHandler<CancelWorkOrderCommand>
 {
     public async Task Handle(CancelWorkOrderCommand request, CancellationToken ct)
@@ -14,6 +14,14 @@ public class CancelWorkOrderHandler(IWorkOrderRepository repo, IUnitOfWork uow)
 
         order.Cancel(request.Reason);
         repo.Update(order);
+
+        var inspection = await inspectionRepo.GetByWorkOrderIdAsync(request.Id, ct);
+        if (inspection != null)
+        {
+            inspection.Cancel();
+            inspectionRepo.Update(inspection);
+        }
+
         await uow.SaveChangesAsync(ct);
     }
 }
