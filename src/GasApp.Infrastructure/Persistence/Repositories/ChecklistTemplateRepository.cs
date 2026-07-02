@@ -28,6 +28,12 @@ public class ChecklistTemplateRepository(AppDbContext context) : IChecklistTempl
             .OrderBy(t => t.Name)
             .ToListAsync(ct);
 
+    public async Task<IReadOnlyList<ChecklistTemplate>> GetAllAsync(CancellationToken ct = default)
+        => await context.ChecklistTemplates
+            .Include(t => t.Sections)
+            .OrderBy(t => t.Name)
+            .ToListAsync(ct);
+
     public async Task AddAsync(ChecklistTemplate template, CancellationToken ct = default)
         => await context.ChecklistTemplates.AddAsync(template, ct);
 

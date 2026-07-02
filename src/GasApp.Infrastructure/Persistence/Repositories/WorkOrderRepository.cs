@@ -45,12 +45,17 @@ public class WorkOrderRepository(AppDbContext context) : IWorkOrderRepository
 
     public async Task<IReadOnlyList<WorkOrder>> GetTechnicianAgendaAsync(
         Guid technicianId, DateTime date, CancellationToken ct = default)
-        => await context.WorkOrders
+    {
+        var start = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
+        var end = start.AddDays(1);
+        return await context.WorkOrders
             .Where(w => w.AssignedTechnicianId == technicianId
-                && w.ScheduledDate.Date == date.Date
+                && w.ScheduledDate >= start
+                && w.ScheduledDate < end
                 && w.Status != WorkOrderStatus.Cancelled)
             .OrderBy(w => w.ScheduledDate)
             .ToListAsync(ct);
+    }
 
     public async Task AddAsync(WorkOrder workOrder, CancellationToken ct = default)
         => await context.WorkOrders.AddAsync(workOrder, ct);

@@ -30,6 +30,8 @@ public static class DependencyInjection
         services.AddScoped<IWorkOrderRepository, WorkOrderRepository>();
         services.AddScoped<IInspectionRepository, InspectionRepository>();
         services.AddScoped<IChecklistTemplateRepository, ChecklistTemplateRepository>();
+        services.AddScoped<IChecklistSectionRepository, ChecklistSectionRepository>();
+        services.AddScoped<IChecklistItemRepository, ChecklistItemRepository>();
         services.AddScoped<IChecklistResponseRepository, ChecklistResponseRepository>();
         services.AddScoped<IEvidenceRepository, EvidenceRepository>();
         services.AddScoped<IFindingRepository, FindingRepository>();

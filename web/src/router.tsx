@@ -11,6 +11,8 @@ import { InspectionsPage } from '@/pages/InspectionsPage'
 import { InspectionDetailPage } from '@/pages/InspectionDetailPage'
 import { UsersPage } from '@/pages/UsersPage'
 import { PermissionsPage } from '@/pages/PermissionsPage'
+import { ChecklistTemplatesPage } from '@/pages/ChecklistTemplatesPage'
+import { ChecklistTemplateDetailPage } from '@/pages/ChecklistTemplateDetailPage'
 
 const rootRoute = createRootRoute()
 
@@ -96,6 +98,18 @@ const permissionsRoute = createRoute({
   component: PermissionsPage,
 })
 
+const checklistTemplatesRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/checklist-templates',
+  component: ChecklistTemplatesPage,
+})
+
+const checklistTemplateDetailRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/checklist-templates/$id',
+  component: ChecklistTemplateDetailPage,
+})
+
 const routeTree = rootRoute.addChildren([
   loginRoute,
   appRoute.addChildren([
@@ -110,6 +124,8 @@ const routeTree = rootRoute.addChildren([
     inspectionDetailRoute,
     usersRoute,
     permissionsRoute,
+    checklistTemplatesRoute,
+    checklistTemplateDetailRoute,
   ]),
 ])
 

@@ -132,24 +132,36 @@ export default function WorkOrderDetailScreen() {
           </TouchableOpacity>
         )}
         {data.status === 'InProgress' && (
-          <View style={styles.actionRow}>
+          <>
+            <View style={styles.actionRow}>
+              <TouchableOpacity
+                style={styles.actionBtn}
+                onPress={() => router.push(`/(app)/checklist/${id}`)}
+              >
+                <Text style={styles.actionBtnText}>📋 Checklist</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.actionBtn}
+                onPress={() => {
+                  if (data.inspectionId) {
+                    router.push(`/(app)/findings/${data.inspectionId}`)
+                  }
+                }}
+              >
+                <Text style={styles.actionBtnText}>⚠️ Hallazgos</Text>
+              </TouchableOpacity>
+            </View>
             <TouchableOpacity
-              style={styles.actionBtn}
-              onPress={() => router.push(`/(app)/checklist/${id}`)}
-            >
-              <Text style={styles.actionBtnText}>📋 Checklist</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.actionBtn}
+              style={styles.signatureBtn}
               onPress={() => {
                 if (data.inspectionId) {
-                  router.push(`/(app)/findings/${data.inspectionId}`)
+                  router.push(`/(app)/signature/${data.inspectionId}`)
                 }
               }}
             >
-              <Text style={styles.actionBtnText}>⚠️ Hallazgos</Text>
+              <Text style={styles.signatureBtnText}>✍️ Firmar y finalizar inspección</Text>
             </TouchableOpacity>
-          </View>
+          </>
         )}
       </View>
     </SafeAreaView>
@@ -206,6 +218,11 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#BFDBFE',
   },
   actionBtnText: { color: '#1D4ED8', fontWeight: '600', fontSize: 14 },
+  signatureBtn: {
+    height: 50, borderRadius: 12, backgroundColor: '#059669',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  signatureBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
   startButton: {
     height: 50,
     backgroundColor: '#1D4ED8',

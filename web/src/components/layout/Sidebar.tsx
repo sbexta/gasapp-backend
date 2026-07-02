@@ -1,6 +1,6 @@
 import { Link, useLocation } from '@tanstack/react-router'
 import {
-  LayoutDashboard, Users, Building2, ClipboardList, LogOut, Flame, MapPin, ShieldCheck, FileText, Search, Lock,
+  LayoutDashboard, Users, Building2, ClipboardList, LogOut, Flame, MapPin, ShieldCheck, FileText, Search, Lock, ListChecks,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/store/auth'
@@ -11,6 +11,7 @@ const navItems = [
   { to: '/contracts', icon: FileText, label: 'Contratos', roles: ['Admin', 'Supervisor'] },
   { to: '/locations', icon: MapPin, label: 'Sedes', roles: ['Admin', 'Supervisor'] },
   { to: '/inspection-types', icon: ShieldCheck, label: 'Tipos de inspección', roles: ['Admin', 'Supervisor'] },
+  { to: '/checklist-templates', icon: ListChecks, label: 'Checklists', roles: ['Admin', 'Supervisor'] },
   { to: '/work-orders', icon: ClipboardList, label: 'Órdenes de trabajo', roles: ['Admin', 'Supervisor'] },
   { to: '/inspections', icon: Search, label: 'Inspecciones', roles: ['Admin', 'Supervisor'] },
   { to: '/users', icon: Users, label: 'Usuarios', roles: ['Admin'] },

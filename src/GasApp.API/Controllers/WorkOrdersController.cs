@@ -50,8 +50,12 @@ public class WorkOrdersController(IMediator mediator, ICurrentUserService curren
             ? currentUser.UserId
             : (technicianId ?? currentUser.UserId);
 
+        var resolvedDate = date.HasValue
+            ? DateTime.SpecifyKind(date.Value.Date, DateTimeKind.Utc)
+            : DateTime.UtcNow.Date;
+
         var result = await mediator.Send(
-            new GetTechnicianAgendaQuery(resolvedTechnicianId, date ?? DateTime.UtcNow.Date), ct);
+            new GetTechnicianAgendaQuery(resolvedTechnicianId, resolvedDate), ct);
         return Ok(result);
     }
 
