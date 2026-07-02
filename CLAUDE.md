@@ -34,14 +34,16 @@ Sistema de inspección de gas en Colombia. API REST + Web Admin + App móvil.
 | Forms | React Hook Form + Zod |
 | Estado global | Zustand (auth) |
 
-### Mobile (`mobile/`) — Sprint 4 pendiente
+### Mobile (`mobile/`)
 | | |
 |---|---|
-| Framework | Expo SDK (React Native) |
-| Routing | Expo Router |
-| Offline | WatermelonDB |
+| Framework | Expo SDK 54 (React Native) |
+| Routing | Expo Router 4 |
 | Auth storage | expo-secure-store |
-| **Requisito** | Node ≥ 20.19.4 (actualmente 20.15.1) |
+| Data fetching | TanStack Query + Axios |
+| Estado global | Zustand |
+| Conectividad | @react-native-community/netinfo |
+| Pruebas | Expo Go en dispositivo físico |
 
 ---
 
@@ -62,6 +64,19 @@ web/                      # Web admin React
     store/                # auth.ts (Zustand)
     types/                # api.ts (DTOs tipados)
     router.tsx            # TanStack Router (rutas protegidas)
+
+mobile/                   # App móvil Expo
+  app/
+    _layout.tsx           # Root layout + AuthGuard
+    (auth)/login.tsx      # Pantalla de login
+    (app)/agenda.tsx      # Agenda del día del técnico
+    (app)/work-orders.tsx # Listado de órdenes
+    (app)/work-order/[id].tsx  # Detalle + botón iniciar
+  src/
+    lib/api.ts            # Axios + interceptores JWT
+    store/auth.ts         # Zustand con expo-secure-store
+    types/api.ts          # DTOs tipados
+    components/ConnectivityBanner.tsx  # Indicador offline
 
 tests/
   GasApp.Domain.Tests/
@@ -144,24 +159,26 @@ Proxy configurado: `/api` → `https://localhost:7051` (backend)
 
 ---
 
-### Sprint 4 — PENDIENTE
-**Scope:** App móvil Expo (React Native)
+### Sprint 4 — COMPLETADO ✅
+**Commits:** `95daf49`, `eacb35f`
 
-**Prerequisitos antes de empezar:**
-1. Actualizar Node.js a ≥ 20.19.4 (actualmente 20.15.1) → https://nodejs.org
-2. Para emulador Android: instalar Android Studio
-3. Para probar sin emulador: instalar **Expo Go** en el celular (Android o iOS)
+**App móvil en `mobile/`:**
+- Expo SDK 54 + Expo Router 4 + TypeScript
+- Auth con `expo-secure-store` — token guardado de forma segura en el dispositivo
+- Interceptor Axios para refresh automático de JWT
+- Zustand para estado de autenticación
+- **LoginScreen** — form con validación, manejo de errores
+- **AgendaScreen** — órdenes del día del técnico con pull-to-refresh
+- **WorkOrdersScreen** — listado de todas las órdenes asignadas
+- **WorkOrderDetailScreen** — detalle completo (cliente, sede, fecha) + botón **Iniciar inspección**
+- **ConnectivityBanner** — banner naranja cuando no hay conexión (NetInfo)
+- Tab navigation: Agenda | Órdenes
+- Probado en dispositivo físico con Expo Go ✅
 
-**Funcionalidades planificadas:**
-- Login con token en `expo-secure-store`
-- Agenda del técnico (inspecciones del día)
-- Detalle de orden de trabajo
-- Descarga offline con WatermelonDB
-- Cambio de estado `Assigned → InProgress`
-- Indicador de conectividad
-- Sincronización básica al reconectar
-
-**Nota:** el mismo código funciona para Android e iOS. En Windows solo se puede probar con Expo Go en teléfono físico (emulador iOS requiere Mac/Xcode).
+**Nuevos endpoints backend:**
+- `GET /api/v1/work-orders/{id}` — detalle con cliente y sede
+- `POST /api/v1/work-orders/{id}/start` — cambia estado `Assigned → InProgress`
+- `GET /api/v1/work-orders/agenda` — usa el ID del token automáticamente para técnicos
 
 ---
 
@@ -187,20 +204,26 @@ docker compose up -d
 # 2. Aplicar migraciones
 dotnet ef database update --project src/GasApp.Infrastructure --startup-project src/GasApp.API
 
-# 3. Correr la API (puerto https: 7051, http: 5289)
-dotnet run --project src/GasApp.API
-# Swagger: https://localhost:7051/swagger
+# 3. Correr la API (accesible desde la red local)
+dotnet run --project src/GasApp.API --launch-profile http
+# Swagger: http://localhost:5289/swagger
 # Credenciales admin: admin@gasapp.com / Admin1234!
 
 # 4. Correr el web admin
 cd web && npm run dev
 # Abre: http://localhost:3000
+
+# 5. Correr la app móvil
+cd mobile && npx expo start --clear
+# Escanear QR con Expo Go (celular en la misma red WiFi que el PC)
 ```
 
 ```bash
 # Correr tests
 dotnet test
 ```
+
+**Nota red local (mobile):** el backend escucha en `0.0.0.0:5289`. La IP del PC en `mobile/src/lib/api.ts` debe ser la IP del adaptador Ethernet (`192.168.0.11`). El celular debe estar en la misma red WiFi.
 
 ---
 
