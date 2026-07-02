@@ -305,6 +305,44 @@ Crear OT → Asignar técnico → Iniciar → Registrar hallazgo → Capturar fi
 
 ---
 
+### Sprint 9 — COMPLETADO ✅
+**Commit:** `e6e848b`
+
+**Certificados PDF (QuestPDF):**
+- `InspectionCertificate` — entidad que guarda número, ruta del PDF, fecha y emisor
+- `CertificateService` (Infrastructure) — genera PDF con QuestPDF 2024.12.1 (layout A4: encabezado, datos cliente/sede, tabla hallazgos, firma digital base64); usa `CertData` record tipado para evitar CS1973 con extension methods en `dynamic`
+- `ApproveInspectionHandler` actualizado — al aprobar: genera PDF → guarda `InspectionCertificate` → notifica al técnico
+- `GET /api/v1/inspections/{id}/certificate` — descarga el PDF como `application/pdf`
+- Web: botón "Descargar certificado PDF" en `InspectionDetailPage` cuando estado = `Completed`
+
+**Historial de estados:**
+- `InspectionStatusHistory` — registra cada transición: estado anterior, nuevo, fecha, usuario, notas
+- `IInspectionStatusHistoryRepository` + `InspectionStatusHistoryRepository`
+- Registrado en: `ApproveInspectionHandler` (×2 transiciones), `SubmitInspectionHandler`
+- `GET /api/v1/inspections/{id}/history` — lista cronológica de cambios
+- Web: timeline visual en `InspectionDetailPage` (línea vertical, dot por entrada, → entre estados)
+
+**Notificaciones in-app:**
+- `Notification` — entidad con UserId, Title, Body, Type, ReferenceId, IsRead
+- `NotificationsController` — `GET /notifications`, `GET /notifications/unread-count`, `PUT /notifications/{id}/read`
+- Disparadores: `AssignTechnicianHandler` (OT asignada → técnico), `SubmitInspectionHandler` (enviada → todos los supervisores), `ApproveInspectionHandler` (aprobada → técnico)
+- Web: `NotificationBell` en `AppLayout` — polling 30s, badge contador, dropdown mark-as-read
+
+**Reportes operacionales:**
+- `ReportsController` — `GET /reports/inspections` (paginado, filtros fecha/estado/técnico), `GET /reports/kpis`, `GET /reports/inspections/export` (CSV descarga)
+- 7 KPIs: total, completadas, en progreso, en revisión, rechazadas, tasa completadas, días promedio
+- Cálculo de días promedio **en memoria** (no `EF.Functions.DateDiffDay` — es SQL Server, no Npgsql)
+- `ReportsPage` (`/reports`) — 7 cards KPI, filtros fecha/estado, tabla paginada, botón exportar CSV
+- Sidebar: link "Reportes" para Admin y Supervisor
+
+**Migración:** `20260702221313_Sprint9_Certificates_History_Notifications` (3 tablas nuevas: `inspection_certificates`, `inspection_status_history`, `notifications`)
+
+**Fixes previos incluidos en este sprint:**
+- `SignatureScreen` mobile: invalida `['work-orders-all']` en `onSuccess` para que la lista de órdenes refleje el nuevo estado
+- `DashboardPage` web: `refetchInterval: 30_000` en ambas queries para auto-refresh cada 30s
+
+---
+
 ## Convenciones del proyecto
 
 - Tablas en `snake_case` (EF Core convención)
