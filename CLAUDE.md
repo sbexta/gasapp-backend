@@ -403,3 +403,38 @@ dotnet test
   }
 }
 ```
+
+---
+
+## Plan de deploy a producción (pendiente)
+
+### Stack elegido (100% gratuito)
+
+| Componente | Servicio | Notas |
+|------------|----------|-------|
+| API (.NET 8) | **Render** (free Web Service) | Se duerme tras 15 min sin uso; cold start ~30s |
+| PostgreSQL | **Neon** (free serverless) | 0.5 GB, connection string tipo `postgres://...` |
+| Redis | **Upstash** (free) | 10k comandos/día, connection string `rediss://...` |
+| Web admin (React) | **Vercel** (free hobby) | Deploy automático desde GitHub |
+| Archivos PDF/firmas | **Cloudflare R2** (free) | 10 GB, reemplaza `LocalFileStorageService` |
+
+### Orden de pasos
+
+1. **Neon** — crear proyecto → copiar `DATABASE_URL`
+2. **Upstash** — crear Redis → copiar `UPSTASH_REDIS_URL`
+3. **Render** — nuevo Web Service conectado al repo GitHub:
+   - Build command: `dotnet publish src/GasApp.API -c Release -o out`
+   - Start command: `dotnet out/GasApp.API.dll`
+   - Variables de entorno: `ConnectionStrings__DefaultConnection`, `Redis__ConnectionString`, `Jwt__Secret`, `ASPNETCORE_ENVIRONMENT=Production`
+   - Correr migraciones en el primer deploy (o con un job aparte)
+4. **Vercel** — importar repo, configurar `VITE_API_URL` apuntando a la URL de Render
+5. **Cloudflare R2** — crear bucket, adaptar `LocalFileStorageService` → `R2StorageService`
+
+### Cambios de código necesarios antes del deploy
+
+- [ ] `LocalFileStorageService` → `R2StorageService` (o subir PDFs/firmas a R2 en vez de disco local)
+- [ ] `appsettings.Production.json` — sin secrets hardcodeados, todo desde env vars
+- [ ] `web/` — proxy Vite solo sirve en dev; en prod el React llama directo a la URL de Render
+- [ ] `mobile/src/lib/api.ts` — cambiar IP local por URL de Render
+- [ ] Migración automática al arrancar en prod (o script manual en Neon)
+- [ ] `CORS` en `Program.cs` — permitir origen de Vercel
