@@ -21,11 +21,13 @@ export function DashboardPage() {
   const { data: clientsData } = useQuery({
     queryKey: ['clients', 'count'],
     queryFn: () => api.get<PagedResult<unknown>>('/clients?pageSize=1').then((r) => r.data),
+    refetchInterval: 30_000,
   })
 
   const { data: ordersData } = useQuery({
     queryKey: ['work-orders', 'recent'],
     queryFn: () => api.get<PagedResult<WorkOrderDto>>('/work-orders?pageSize=5').then((r) => r.data),
+    refetchInterval: 30_000,
   })
 
   const stats = [

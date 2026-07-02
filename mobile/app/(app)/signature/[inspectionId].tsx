@@ -35,6 +35,7 @@ export default function SignatureScreen() {
       ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['work-order'] })
+      queryClient.invalidateQueries({ queryKey: ['work-orders-all'] })
       queryClient.invalidateQueries({ queryKey: ['agenda'] })
       Alert.alert(
         'Inspección finalizada',
