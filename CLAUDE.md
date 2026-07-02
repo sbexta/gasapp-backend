@@ -238,8 +238,39 @@ Clientes → Contratos → Sedes → Tipos de inspección → Órdenes de trabaj
 
 ---
 
+### Sprint 8 — COMPLETADO ✅
+**Commits:** `d9c699b`, `1c3cc1e`
+
+**Gestor de plantillas de checklist — backend:**
+- **`ChecklistTemplatesController`** — `GET/POST /checklist-templates`, `GET /{id}`, `POST /{id}/sections`, `POST /{id}/sections/{sectionId}/items`
+- **`CreateChecklistTemplateCommand`**, **`AddChecklistSectionCommand`**, **`AddChecklistItemCommand`**
+- **`GetChecklistTemplatesQuery`** — lista con `sectionCount`; **`GetChecklistTemplateDetailQuery`** — árbol completo
+- **`IChecklistSectionRepository`**, **`IChecklistItemRepository`** + implementaciones registradas en DI
+
+**Fixes backend:**
+- Agenda endpoint: `date` param se fuerza a `DateTimeKind.Utc` (Npgsql 6+ rechaza `Unspecified` en `timestamptz`)
+- `WorkOrderRepository.GetTechnicianAgendaAsync`: rango `>= start && < end` en vez de `.Date ==`
+
+**Web admin — nuevas páginas:**
+- **ChecklistTemplatesPage** (`/checklist-templates`) — lista + modal crear con vinculación a tipo de inspección
+- **ChecklistTemplateDetailPage** (`/checklist-templates/$id`) — builder de secciones e ítems (YesNo, Texto, Numérico, Foto)
+- **Sidebar** — link Checklists para Admin/Supervisor
+
+**Web admin — fixes:**
+- `useParams({ strict: false })` en `InspectionDetailPage` y `ChecklistTemplateDetailPage` — evita crash "Invariant failed" de TanStack Router en rutas con `$id`
+
+**Mobile — firma en landscape:**
+- `signature/[inspectionId].tsx` reescrito: Modal a pantalla completa con contenido rotado 90° via `transform` CSS — simula landscape sin usar `expo-screen-orientation`, elimina el crash al abrir el canvas
+- Botón "✍️ Toca para firmar" → canvas en "horizontal" → preview de la firma → "Guardar firma y finalizar"
+- Cleanup: eliminadas rutas duplicadas `(app)/agenda.tsx` y `(app)/work-orders.tsx` (viven en `(app)/(tabs)/` desde sprint 7)
+
+**Nota técnica — useParams en TanStack Router:**
+`useParams({ from: '/ruta/$id' })` lanza "Invariant failed" si la ruta no es el match activo exacto. La solución es `useParams({ strict: false }) as { id: string }`. Se aplica a todas las páginas con parámetros dinámicos.
+
+---
+
 ### Sprint 7 — COMPLETADO ✅
-**Commit:** (este commit)
+**Commit:** `79a74ec`
 
 **Flujo de finalización de inspecciones — backend:**
 - **`SubmitInspectionCommand`** — técnico envía inspección: `InProgress → TechnicalReview`
