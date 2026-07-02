@@ -13,6 +13,7 @@ import { UsersPage } from '@/pages/UsersPage'
 import { PermissionsPage } from '@/pages/PermissionsPage'
 import { ChecklistTemplatesPage } from '@/pages/ChecklistTemplatesPage'
 import { ChecklistTemplateDetailPage } from '@/pages/ChecklistTemplateDetailPage'
+import { ReportsPage } from '@/pages/ReportsPage'
 
 const rootRoute = createRootRoute()
 
@@ -110,6 +111,12 @@ const checklistTemplateDetailRoute = createRoute({
   component: ChecklistTemplateDetailPage,
 })
 
+const reportsRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/reports',
+  component: ReportsPage,
+})
+
 const routeTree = rootRoute.addChildren([
   loginRoute,
   appRoute.addChildren([
@@ -122,6 +129,7 @@ const routeTree = rootRoute.addChildren([
     workOrdersRoute,
     inspectionsRoute,
     inspectionDetailRoute,
+    reportsRoute,
     usersRoute,
     permissionsRoute,
     checklistTemplatesRoute,

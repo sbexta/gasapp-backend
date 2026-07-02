@@ -4,6 +4,7 @@ using GasApp.Domain.Entities.Clients;
 using GasApp.Domain.Entities.Inspections;
 using GasApp.Domain.Entities.Users;
 using Microsoft.EntityFrameworkCore;
+using Notification = GasApp.Domain.Entities.Users.Notification;
 
 namespace GasApp.Infrastructure.Persistence;
 
@@ -30,6 +31,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Finding> Findings => Set<Finding>();
     public DbSet<InspectionSignature> InspectionSignatures => Set<InspectionSignature>();
     public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
+    public DbSet<InspectionCertificate> InspectionCertificates => Set<InspectionCertificate>();
+    public DbSet<InspectionStatusHistory> InspectionStatusHistories => Set<InspectionStatusHistory>();
+    public DbSet<Notification> Notifications => Set<Notification>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

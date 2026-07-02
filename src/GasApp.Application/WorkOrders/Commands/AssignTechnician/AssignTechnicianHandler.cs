@@ -1,3 +1,4 @@
+using GasApp.Domain.Entities.Users;
 using GasApp.Domain.Enums;
 using GasApp.Domain.Exceptions;
 using GasApp.Domain.Repositories;
@@ -8,6 +9,7 @@ namespace GasApp.Application.WorkOrders.Commands.AssignTechnician;
 public class AssignTechnicianHandler(
     IWorkOrderRepository workOrderRepo,
     IUserRepository userRepo,
+    INotificationRepository notifRepo,
     IUnitOfWork unitOfWork)
     : IRequestHandler<AssignTechnicianCommand>
 {
@@ -26,6 +28,14 @@ public class AssignTechnicianHandler(
             throw new DomainException("No se puede asignar un técnico inactivo.");
 
         workOrder.AssignTechnician(request.TechnicianId);
+
+        var notif = Notification.Create(
+            technician.Id,
+            "Nueva orden de trabajo asignada",
+            $"Se te asignó la orden {workOrder.OrderNumber} para el {workOrder.ScheduledDate:dd/MM/yyyy}.",
+            "WorkOrderAssigned",
+            workOrder.Id);
+        await notifRepo.AddAsync(notif, cancellationToken);
 
         workOrderRepo.Update(workOrder);
         await unitOfWork.SaveChangesAsync(cancellationToken);

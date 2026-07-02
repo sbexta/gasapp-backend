@@ -1,4 +1,5 @@
 using GasApp.Domain.Entities.Users;
+using GasApp.Domain.Enums;
 using GasApp.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,6 +15,9 @@ public class UserRepository(AppDbContext context) : IUserRepository
 
     public async Task<IReadOnlyList<User>> GetAllAsync(CancellationToken ct = default) =>
         await context.Users.ToListAsync(ct);
+
+    public async Task<IReadOnlyList<User>> GetByRoleAsync(UserRole role, CancellationToken ct = default) =>
+        await context.Users.Where(u => u.Role == role && u.IsActive).ToListAsync(ct);
 
     public async Task AddAsync(User user, CancellationToken ct = default) =>
         await context.Users.AddAsync(user, ct);

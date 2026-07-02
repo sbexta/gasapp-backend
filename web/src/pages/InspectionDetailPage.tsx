@@ -6,6 +6,11 @@ import { Button } from '@/components/ui/button'
 import { api } from '@/lib/api'
 import type { InspectionDetailDto } from '@/types/api'
 
+interface HistoryEntry {
+  id: string; previousStatus: string | null; newStatus: string
+  changedAt: string; changedByName: string | null; notes: string | null
+}
+
 const statusLabel: Record<string, string> = {
   Pending: 'Pendiente', PreCheck: 'Pre-revisión', InProgress: 'En progreso',
   TechnicalReview: 'Revisión técnica', GeneratingDocs: 'Generando docs',
@@ -36,6 +41,11 @@ export function InspectionDetailPage() {
   const { data, isLoading } = useQuery({
     queryKey: ['inspection', id],
     queryFn: () => api.get<InspectionDetailDto>(`/inspections/${id}`).then((r) => r.data),
+  })
+
+  const { data: history = [] } = useQuery({
+    queryKey: ['inspection-history', id],
+    queryFn: () => api.get<HistoryEntry[]>(`/inspections/${id}/history`).then(r => r.data),
   })
 
   const approveMutation = useMutation({
@@ -78,6 +88,14 @@ export function InspectionDetailPage() {
           </Badge>
           {data.status === 'TechnicalReview' && (
             <Button onClick={() => setShowApproveModal(true)}>Aprobar inspección</Button>
+          )}
+          {data.status === 'Completed' && (
+            <a
+              href={`/api/v1/inspections/${id}/certificate`} target="_blank" rel="noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-green-300 bg-green-50 px-3 py-1.5 text-sm font-medium text-green-700 hover:bg-green-100"
+            >
+              ↓ Descargar certificado PDF
+            </a>
           )}
         </div>
       </div>
@@ -184,6 +202,35 @@ export function InspectionDetailPage() {
           </div>
         )}
       </div>
+
+      {/* Historial de estados */}
+      {history.length > 0 && (
+        <div className="mt-6">
+          <h2 className="mb-3 text-base font-semibold text-gray-900">Historial de estados</h2>
+          <div className="relative pl-4">
+            <div className="absolute left-1.5 top-2 bottom-2 w-px bg-gray-200" />
+            {history.map((entry, i) => (
+              <div key={entry.id} className="relative mb-4 pl-5">
+                <span className="absolute -left-0.5 top-1.5 h-3 w-3 rounded-full border-2 border-white bg-blue-500 shadow" />
+                <div className="rounded-lg border border-gray-200 bg-white p-3">
+                  <div className="flex items-center gap-2">
+                    {entry.previousStatus && (
+                      <><span className="text-xs text-gray-400">{statusLabel[entry.previousStatus] ?? entry.previousStatus}</span>
+                      <span className="text-xs text-gray-400">→</span></>
+                    )}
+                    <span className="text-xs font-semibold text-gray-800">{statusLabel[entry.newStatus] ?? entry.newStatus}</span>
+                  </div>
+                  <div className="mt-1 flex items-center gap-2 text-xs text-gray-400">
+                    <span>{new Date(entry.changedAt).toLocaleString('es-CO')}</span>
+                    {entry.changedByName && <><span>·</span><span>{entry.changedByName}</span></>}
+                  </div>
+                  {entry.notes && <p className="mt-1 text-xs text-gray-600 italic">"{entry.notes}"</p>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Modal aprobar */}
       {showApproveModal && (

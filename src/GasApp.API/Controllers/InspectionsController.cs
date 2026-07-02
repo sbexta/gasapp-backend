@@ -1,5 +1,7 @@
 using GasApp.Application.Common.Interfaces;
 using GasApp.Application.Inspections.Commands.AddFinding;
+using GasApp.Application.Inspections.Queries.GetInspectionHistory;
+using GasApp.Domain.Repositories;
 using GasApp.Application.Inspections.Commands.ApproveInspection;
 using GasApp.Application.Inspections.Commands.CaptureSignature;
 using GasApp.Application.Inspections.Commands.SubmitChecklistResponse;
@@ -18,7 +20,10 @@ namespace GasApp.API.Controllers;
 [ApiController]
 [Route("api/v1/inspections")]
 [Authorize]
-public class InspectionsController(IMediator mediator, ICurrentUserService currentUser) : ControllerBase
+public class InspectionsController(
+    IMediator mediator,
+    ICurrentUserService currentUser,
+    ICertificateRepository certRepo) : ControllerBase
 {
     [HttpGet]
     [Authorize(Roles = "Admin,Supervisor")]
@@ -86,6 +91,26 @@ public class InspectionsController(IMediator mediator, ICurrentUserService curre
     {
         await mediator.Send(new ApproveInspectionCommand(id, request.SupervisorNotes), ct);
         return NoContent();
+    }
+
+    [HttpGet("{id:guid}/history")]
+    public async Task<IActionResult> GetHistory(Guid id, CancellationToken ct)
+    {
+        var result = await mediator.Send(new GetInspectionHistoryQuery(id), ct);
+        return Ok(result);
+    }
+
+    [HttpGet("{id:guid}/certificate")]
+    public async Task<IActionResult> DownloadCertificate(Guid id, CancellationToken ct)
+    {
+        var cert = await certRepo.GetByInspectionIdAsync(id, ct);
+        if (cert == null) return NotFound(new { message = "Certificado no generado aún." });
+
+        if (!System.IO.File.Exists(cert.FilePath))
+            return NotFound(new { message = "Archivo del certificado no encontrado en el servidor." });
+
+        var bytes = await System.IO.File.ReadAllBytesAsync(cert.FilePath, ct);
+        return File(bytes, "application/pdf", $"{cert.CertificateNumber}.pdf");
     }
 
     [HttpPost("{id:guid}/evidences")]

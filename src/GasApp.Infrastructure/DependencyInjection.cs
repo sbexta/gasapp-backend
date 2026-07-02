@@ -1,6 +1,7 @@
 using GasApp.Application.Common.Interfaces;
 using GasApp.Domain.Repositories;
 using GasApp.Infrastructure.Auth;
+using GasApp.Infrastructure.Certificates;
 using GasApp.Infrastructure.Persistence;
 using GasApp.Infrastructure.Persistence.Repositories;
 using GasApp.Infrastructure.Storage;
@@ -38,7 +39,12 @@ public static class DependencyInjection
         services.AddScoped<IInspectionSignatureRepository, InspectionSignatureRepository>();
         services.AddScoped<IInspectionTypeRepository, InspectionTypeRepository>();
         services.AddScoped<IRolePermissionRepository, RolePermissionRepository>();
+        services.AddScoped<ICertificateRepository, CertificateRepository>();
+        services.AddScoped<IInspectionStatusHistoryRepository, InspectionStatusHistoryRepository>();
+        services.AddScoped<INotificationRepository, NotificationRepository>();
+        services.AddScoped<IReportRepository, ReportRepository>();
 
+        services.AddScoped<ICertificateService, CertificateService>();
         services.AddScoped<IFileStorageService, LocalFileStorageService>();
 
         services.AddScoped<IJwtTokenService, JwtTokenService>();
