@@ -28,7 +28,16 @@ const createSchema = z.object({
   role: z.enum(['Admin', 'Supervisor', 'Technician', 'Client']),
   phone: z.string().optional(),
 })
+const resetSchema = z.object({
+  newPassword: z.string()
+    .min(8, 'Mínimo 8 caracteres')
+    .regex(/[A-Z]/, 'Debe tener al menos una mayúscula')
+    .regex(/[0-9]/, 'Debe tener al menos un número'),
+  confirm: z.string(),
+}).refine((v) => v.newPassword === v.confirm, { message: 'Las contraseñas no coinciden', path: ['confirm'] })
+
 type CreateForm = z.infer<typeof createSchema>
+type ResetForm = z.infer<typeof resetSchema>
 
 export function UsersPage() {
   const qc = useQueryClient()
@@ -36,6 +45,7 @@ export function UsersPage() {
   const [roleFilter, setRoleFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [showCreate, setShowCreate] = useState(false)
+  const [resetUser, setResetUser] = useState<UserDto | null>(null)
 
   const { data, isLoading } = useQuery({
     queryKey: ['users', search, roleFilter, statusFilter],
@@ -53,19 +63,23 @@ export function UsersPage() {
     defaultValues: { role: 'Technician' },
   })
 
+  const resetForm = useForm<ResetForm>({ resolver: zodResolver(resetSchema) })
+
   const createMutation = useMutation({
     mutationFn: (values: CreateForm) => api.post('/users', values),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['users'] })
-      setShowCreate(false)
-      form.reset()
-    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['users'] }); setShowCreate(false); form.reset() },
   })
 
   const toggleMutation = useMutation({
     mutationFn: ({ id, activate }: { id: string; activate: boolean }) =>
       api.patch(`/users/${id}/${activate ? 'activate' : 'deactivate'}`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['users'] }),
+  })
+
+  const resetMutation = useMutation({
+    mutationFn: ({ id, newPassword }: { id: string; newPassword: string }) =>
+      api.patch(`/users/${id}/reset-password`, { newPassword }),
+    onSuccess: () => { setResetUser(null); resetForm.reset() },
   })
 
   return (
@@ -78,7 +92,6 @@ export function UsersPage() {
         <Button onClick={() => setShowCreate(true)}>+ Nuevo usuario</Button>
       </div>
 
-      {/* Filtros */}
       <div className="mb-4 flex items-center gap-3">
         <Input
           placeholder="Buscar por nombre o correo..."
@@ -128,9 +141,7 @@ export function UsersPage() {
                 <td className="px-4 py-3 font-medium text-gray-900">{u.fullName}</td>
                 <td className="px-4 py-3 text-gray-600">{u.email}</td>
                 <td className="px-4 py-3">
-                  <Badge variant={roleVariant[u.role] ?? 'secondary'}>
-                    {roleLabel[u.role] ?? u.role}
-                  </Badge>
+                  <Badge variant={roleVariant[u.role] ?? 'secondary'}>{roleLabel[u.role] ?? u.role}</Badge>
                 </td>
                 <td className="px-4 py-3">
                   <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${u.isActive ? 'text-green-700' : 'text-gray-400'}`}>
@@ -138,13 +149,19 @@ export function UsersPage() {
                     {u.isActive ? 'Activo' : 'Inactivo'}
                   </span>
                 </td>
-                <td className="px-4 py-3">
+                <td className="px-4 py-3 flex items-center gap-3">
                   <button
                     onClick={() => toggleMutation.mutate({ id: u.id, activate: !u.isActive })}
                     disabled={toggleMutation.isPending}
                     className={`text-xs font-medium hover:underline ${u.isActive ? 'text-red-600' : 'text-green-600'}`}
                   >
                     {u.isActive ? 'Desactivar' : 'Activar'}
+                  </button>
+                  <button
+                    onClick={() => { setResetUser(u); resetForm.reset() }}
+                    className="text-xs font-medium text-blue-600 hover:underline"
+                  >
+                    Restablecer contraseña
                   </button>
                 </td>
               </tr>
@@ -159,7 +176,6 @@ export function UsersPage() {
           <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-xl">
             <h2 className="mb-5 text-lg font-semibold text-gray-900">Nuevo usuario</h2>
             <form onSubmit={form.handleSubmit((v) => createMutation.mutate(v))} className="space-y-4">
-
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="firstName">Nombre</Label>
@@ -176,7 +192,6 @@ export function UsersPage() {
                   )}
                 </div>
               </div>
-
               <div>
                 <Label htmlFor="email">Correo electrónico</Label>
                 <Input id="email" type="email" {...form.register('email')} />
@@ -184,7 +199,6 @@ export function UsersPage() {
                   <p className="mt-1 text-xs text-red-500">{form.formState.errors.email.message}</p>
                 )}
               </div>
-
               <div>
                 <Label htmlFor="password">Contraseña</Label>
                 <Input id="password" type="password" {...form.register('password')} />
@@ -193,15 +207,10 @@ export function UsersPage() {
                 )}
                 <p className="mt-1 text-xs text-gray-400">Mínimo 8 caracteres, una mayúscula y un número</p>
               </div>
-
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="role">Rol</Label>
-                  <select
-                    id="role"
-                    {...form.register('role')}
-                    className="mt-1 h-9 w-full rounded-md border border-gray-300 bg-white px-3 text-sm"
-                  >
+                  <select id="role" {...form.register('role')} className="mt-1 h-9 w-full rounded-md border border-gray-300 bg-white px-3 text-sm">
                     <option value="Admin">Admin</option>
                     <option value="Supervisor">Supervisor</option>
                     <option value="Technician">Técnico</option>
@@ -213,17 +222,52 @@ export function UsersPage() {
                   <Input id="phone" {...form.register('phone')} placeholder="+57 300 000 0000" />
                 </div>
               </div>
-
               {createMutation.isError && (
                 <p className="text-sm text-red-500">Error al crear el usuario. Verifica los datos.</p>
               )}
-
               <div className="flex justify-end gap-3 pt-2">
-                <Button type="button" variant="outline" onClick={() => { setShowCreate(false); form.reset() }}>
-                  Cancelar
-                </Button>
+                <Button type="button" variant="outline" onClick={() => { setShowCreate(false); form.reset() }}>Cancelar</Button>
                 <Button type="submit" disabled={createMutation.isPending}>
                   {createMutation.isPending ? 'Creando...' : 'Crear usuario'}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal restablecer contraseña */}
+      {resetUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+            <h2 className="mb-1 text-lg font-semibold text-gray-900">Restablecer contraseña</h2>
+            <p className="mb-5 text-sm text-gray-500">{resetUser.fullName} — {resetUser.email}</p>
+            <form onSubmit={resetForm.handleSubmit((v) => resetMutation.mutate({ id: resetUser.id, newPassword: v.newPassword }))} className="space-y-4">
+              <div>
+                <Label htmlFor="newPassword">Nueva contraseña</Label>
+                <Input id="newPassword" type="password" {...resetForm.register('newPassword')} />
+                {resetForm.formState.errors.newPassword && (
+                  <p className="mt-1 text-xs text-red-500">{resetForm.formState.errors.newPassword.message}</p>
+                )}
+                <p className="mt-1 text-xs text-gray-400">Mínimo 8 caracteres, una mayúscula y un número</p>
+              </div>
+              <div>
+                <Label htmlFor="confirm">Confirmar contraseña</Label>
+                <Input id="confirm" type="password" {...resetForm.register('confirm')} />
+                {resetForm.formState.errors.confirm && (
+                  <p className="mt-1 text-xs text-red-500">{resetForm.formState.errors.confirm.message}</p>
+                )}
+              </div>
+              {resetMutation.isError && (
+                <p className="text-sm text-red-500">Error al restablecer la contraseña.</p>
+              )}
+              {resetMutation.isSuccess && (
+                <p className="text-sm text-green-600">Contraseña restablecida correctamente.</p>
+              )}
+              <div className="flex justify-end gap-3 pt-2">
+                <Button type="button" variant="outline" onClick={() => { setResetUser(null); resetForm.reset() }}>Cancelar</Button>
+                <Button type="submit" disabled={resetMutation.isPending}>
+                  {resetMutation.isPending ? 'Guardando...' : 'Restablecer'}
                 </Button>
               </div>
             </form>

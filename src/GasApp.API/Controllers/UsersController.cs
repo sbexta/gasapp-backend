@@ -1,4 +1,6 @@
+using GasApp.Application.Users.Commands.ChangePassword;
 using GasApp.Application.Users.Commands.CreateUser;
+using GasApp.Application.Users.Commands.ResetUserPassword;
 using GasApp.Application.Users.Commands.ToggleUserStatus;
 using GasApp.Application.Users.Commands.UpdateUser;
 using GasApp.Application.Users.Queries.GetUserById;
@@ -68,6 +70,24 @@ public class UsersController(IMediator mediator) : ControllerBase
         await mediator.Send(new ToggleUserStatusCommand(id, Activate: false), ct);
         return NoContent();
     }
+
+    [HttpPatch("me/change-password")]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request, CancellationToken ct)
+    {
+        var userId = Guid.Parse(User.FindFirst("sub")?.Value ?? User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value!);
+        await mediator.Send(new ChangePasswordCommand(userId, request.CurrentPassword, request.NewPassword), ct);
+        return NoContent();
+    }
+
+    [HttpPatch("{id:guid}/reset-password")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> ResetPassword(Guid id, [FromBody] ResetPasswordRequest request, CancellationToken ct)
+    {
+        await mediator.Send(new ResetUserPasswordCommand(id, request.NewPassword), ct);
+        return NoContent();
+    }
 }
 
 public record UpdateUserRequest(string FirstName, string LastName, string? Phone);
+public record ChangePasswordRequest(string CurrentPassword, string NewPassword);
+public record ResetPasswordRequest(string NewPassword);
