@@ -67,7 +67,9 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("Development", p => p.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
 
-    var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
+    // Lee los orígenes como string separado por comas: "https://a.com,https://b.com"
+    var originsRaw = builder.Configuration["Cors:AllowedOrigins"] ?? "";
+    var allowedOrigins = originsRaw.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
     options.AddPolicy("Production", p => p
         .WithOrigins(allowedOrigins)
         .AllowAnyMethod()
