@@ -49,3 +49,12 @@ desktop.ini
 
 # Docker
 docker-compose.override.yml
+
+# Uploads (archivos generados en runtime)
+src/GasApp.API/uploads/
+
+# Archivos temporales de Vite
+web/vite.config.ts.timestamp-*.mjs
+
+# Documentos sueltos
+*.txt

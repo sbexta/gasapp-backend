@@ -1,4 +1,0 @@
-
----------------revisiones de gas-------------------
-claude --resume 59512804-7040-4bbc-ba2d-c4a3209a0a5d
-
