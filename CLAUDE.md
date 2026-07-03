@@ -6,6 +6,11 @@ Sistema de inspección de gas en Colombia. API REST + Web Admin + App móvil.
 **Repo GitHub:** https://github.com/sbexta/gasapp-backend.git  
 **Branch principal:** `main`
 
+**URLs de producción:**
+- API: https://gasapp-api-5i7z.onrender.com
+- Web Admin: https://gasapp-backend-two.vercel.app
+- BD: Neon PostgreSQL (ep-dark-fire-ats5k8vo.c-9.us-east-1.aws.neon.tech)
+
 ---
 
 ## Stack técnico
@@ -406,35 +411,39 @@ dotnet test
 
 ---
 
-## Plan de deploy a producción (pendiente)
+## Deploy a producción — COMPLETADO ✅
 
-### Stack elegido (100% gratuito)
+### Stack en producción (100% gratuito)
 
-| Componente | Servicio | Notas |
-|------------|----------|-------|
-| API (.NET 8) | **Render** (free Web Service) | Se duerme tras 15 min sin uso; cold start ~30s |
-| PostgreSQL | **Neon** (free serverless) | 0.5 GB, connection string tipo `postgres://...` |
-| Redis | **Upstash** (free) | 10k comandos/día, connection string `rediss://...` |
-| Web admin (React) | **Vercel** (free hobby) | Deploy automático desde GitHub |
-| Archivos PDF/firmas | **Cloudflare R2** (free) | 10 GB, reemplaza `LocalFileStorageService` |
+| Componente | Servicio | URL |
+|------------|----------|-----|
+| API (.NET 8) | **Render** (free Web Service) | https://gasapp-api-5i7z.onrender.com |
+| PostgreSQL | **Neon** (free serverless) | ep-dark-fire-ats5k8vo.c-9.us-east-1.aws.neon.tech |
+| Web admin (React) | **Vercel** (free hobby) | https://gasapp-backend-two.vercel.app |
 
-### Orden de pasos
+> Redis no se implementó — los refresh tokens se persisten en PostgreSQL (`user_sessions`). Se puede añadir Upstash cuando se necesite escalar.
 
-1. **Neon** — crear proyecto → copiar `DATABASE_URL`
-2. **Upstash** — crear Redis → copiar `UPSTASH_REDIS_URL`
-3. **Render** — nuevo Web Service conectado al repo GitHub:
-   - Build command: `dotnet publish src/GasApp.API -c Release -o out`
-   - Start command: `dotnet out/GasApp.API.dll`
-   - Variables de entorno: `ConnectionStrings__DefaultConnection`, `Redis__ConnectionString`, `Jwt__Secret`, `ASPNETCORE_ENVIRONMENT=Production`
-   - Correr migraciones en el primer deploy (o con un job aparte)
-4. **Vercel** — importar repo, configurar `VITE_API_URL` apuntando a la URL de Render
-5. **Cloudflare R2** — crear bucket, adaptar `LocalFileStorageService` → `R2StorageService`
+### Env vars requeridas en Render
 
-### Cambios de código necesarios antes del deploy
+| Variable | Descripción |
+|----------|-------------|
+| `ASPNETCORE_ENVIRONMENT` | `Production` |
+| `ConnectionStrings__DefaultConnection` | Connection string de Neon (formato Npgsql) |
+| `Jwt__Secret` | String aleatorio ≥32 chars |
+| `Jwt__Issuer` | `GasApp.API` |
+| `Jwt__Audience` | `GasApp.Clients` |
+| `Seed__AdminPassword` | Clave del admin inicial |
+| `Cors__AllowedOrigins__0` | `https://gasapp-backend-two.vercel.app` |
 
-- [ ] `LocalFileStorageService` → `R2StorageService` (o subir PDFs/firmas a R2 en vez de disco local)
-- [ ] `appsettings.Production.json` — sin secrets hardcodeados, todo desde env vars
-- [ ] `web/` — proxy Vite solo sirve en dev; en prod el React llama directo a la URL de Render
-- [ ] `mobile/src/lib/api.ts` — cambiar IP local por URL de Render
-- [ ] Migración automática al arrancar en prod (o script manual en Neon)
-- [ ] `CORS` en `Program.cs` — permitir origen de Vercel
+### Env vars requeridas en Vercel
+
+| Variable | Valor |
+|----------|-------|
+| `VITE_API_URL` | `https://gasapp-api-5i7z.onrender.com` |
+
+### Notas operativas
+
+- **Cold start:** Render free se duerme tras 15 min de inactividad; primera petición tarda ~30s
+- **Migraciones:** corren automáticamente al arrancar (`DbSeeder.SeedAsync` llama `MigrateAsync`)
+- **Archivos (PDFs/firmas):** aún usa `LocalFileStorageService` — los archivos se pierden al redesplegar. Pendiente migrar a Cloudflare R2
+- **Deploy automático:** cualquier push a `main` redespliega tanto Render como Vercel
