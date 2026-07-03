@@ -3,20 +3,21 @@ using GasApp.Domain.Entities.Users;
 using GasApp.Domain.Enums;
 using GasApp.Domain.ValueObjects;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace GasApp.Infrastructure.Persistence;
 
 public static class DbSeeder
 {
-    public static async Task SeedAsync(AppDbContext context, IPasswordHasher passwordHasher, ILogger logger)
+    public static async Task SeedAsync(AppDbContext context, IPasswordHasher passwordHasher, ILogger logger, IConfiguration configuration)
     {
         await context.Database.MigrateAsync();
 
-        await SeedAdminUserAsync(context, passwordHasher, logger);
+        await SeedAdminUserAsync(context, passwordHasher, logger, configuration);
     }
 
-    private static async Task SeedAdminUserAsync(AppDbContext context, IPasswordHasher passwordHasher, ILogger logger)
+    private static async Task SeedAdminUserAsync(AppDbContext context, IPasswordHasher passwordHasher, ILogger logger, IConfiguration configuration)
     {
         const string adminEmail = "admin@gasapp.com";
 
@@ -26,7 +27,11 @@ public static class DbSeeder
 
         if (exists) return;
 
-        var hashed = passwordHasher.Hash("Admin1234!");
+        var adminPassword = configuration["Seed:AdminPassword"];
+        if (string.IsNullOrWhiteSpace(adminPassword))
+            throw new InvalidOperationException("La variable de configuración 'Seed:AdminPassword' es requerida para crear el usuario admin inicial.");
+
+        var hashed = passwordHasher.Hash(adminPassword);
         var user = User.Create(
             new Email(adminEmail),
             hashed,
@@ -38,6 +43,6 @@ public static class DbSeeder
         await context.Users.AddAsync(user);
         await context.SaveChangesAsync();
 
-        logger.LogInformation("Seed: usuario admin creado — {Email} / Admin1234!", adminEmail);
+        logger.LogInformation("Seed: usuario admin creado — {Email}", adminEmail);
     }
 }

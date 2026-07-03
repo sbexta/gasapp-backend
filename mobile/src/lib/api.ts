@@ -1,9 +1,11 @@
 import axios from 'axios'
 import * as SecureStore from 'expo-secure-store'
 
-// Cambia por la IP de tu PC (ver con ipconfig → Dirección IPv4)
-// Usa http (no https) para evitar el certificado de desarrollo
-const BASE_URL = 'http://192.168.0.16:5289/api/v1'
+// En producción: define EXPO_PUBLIC_API_URL en .env (ej: https://gasapp.onrender.com)
+// En desarrollo: usa la IP de tu PC (ipconfig → Dirección IPv4)
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL
+  ? `${process.env.EXPO_PUBLIC_API_URL}/api/v1`
+  : 'http://192.168.0.16:5289/api/v1'
 
 export const api = axios.create({
   baseURL: BASE_URL,
