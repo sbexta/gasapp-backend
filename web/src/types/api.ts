@@ -99,6 +99,13 @@ export interface InspectionListDto {
   scheduledDate: string
 }
 
+export interface SignatureDto {
+  signerName: string
+  signerDocument: string | null
+  signedAt: string
+  signatureData: string
+}
+
 export interface InspectionDetailDto {
   id: string
   workOrderId: string
@@ -111,6 +118,7 @@ export interface InspectionDetailDto {
   responses: InspectionResponseDto[]
   findings: InspectionFindingDto[]
   hasSignature: boolean
+  signature: SignatureDto | null
 }
 
 export interface InspectionResponseDto {

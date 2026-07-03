@@ -35,7 +35,10 @@ public class GetInspectionDetailHandler(
             findings.Select(f => new FindingDto(
                 f.Id, f.Description, f.Severity.ToString(), f.RequiresCorrection, f.IsResolved, f.CorrectiveAction, f.ChecklistItemId
             )).ToList(),
+            signature is not null,
             signature is not null
+                ? new SignatureDto(signature.SignerName, signature.SignerDocument, signature.SignedAt, signature.SignatureData)
+                : null
         );
     }
 }

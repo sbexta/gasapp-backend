@@ -16,7 +16,15 @@ public record InspectionDetailDto(
     string? TechnicianNotes,
     IReadOnlyList<ChecklistResponseDto> Responses,
     IReadOnlyList<FindingDto> Findings,
-    bool HasSignature
+    bool HasSignature,
+    SignatureDto? Signature
+);
+
+public record SignatureDto(
+    string SignerName,
+    string? SignerDocument,
+    DateTime SignedAt,
+    string SignatureData
 );
 
 public record ChecklistResponseDto(

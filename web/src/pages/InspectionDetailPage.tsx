@@ -37,6 +37,7 @@ export function InspectionDetailPage() {
   const qc = useQueryClient()
   const [supervisorNotes, setSupervisorNotes] = useState('')
   const [showApproveModal, setShowApproveModal] = useState(false)
+  const [showSignature, setShowSignature] = useState(false)
 
   const { data, isLoading } = useQuery({
     queryKey: ['inspection', id],
@@ -116,9 +117,16 @@ export function InspectionDetailPage() {
         </div>
         <div className="rounded-lg border border-gray-200 bg-white p-4">
           <p className="text-xs text-gray-500">Firma</p>
-          <p className={`text-sm font-medium ${data.hasSignature ? 'text-green-700' : 'text-gray-400'}`}>
-            {data.hasSignature ? '✓ Registrada' : 'Sin firma'}
-          </p>
+          {data.signature ? (
+            <button
+              onClick={() => setShowSignature(true)}
+              className="mt-1 flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:underline"
+            >
+              ✓ Ver firma
+            </button>
+          ) : (
+            <p className="text-sm font-medium text-gray-400">Sin firma</p>
+          )}
         </div>
       </div>
 
@@ -228,6 +236,67 @@ export function InspectionDetailPage() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Modal firma */}
+      {showSignature && data.signature && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+          onClick={() => setShowSignature(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-4 flex items-start justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">Firma del cliente</h2>
+                <p className="text-sm text-gray-500">
+                  {new Date(data.signature.signedAt).toLocaleString('es-CO', {
+                    day: 'numeric', month: 'long', year: 'numeric',
+                    hour: '2-digit', minute: '2-digit',
+                  })}
+                </p>
+              </div>
+              <button
+                onClick={() => setShowSignature(false)}
+                className="text-gray-400 hover:text-gray-600 text-xl leading-none"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="mb-4 overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
+              <img
+                src={`data:image/png;base64,${data.signature.signatureData}`}
+                alt="Firma del cliente"
+                className="mx-auto block max-h-48 w-full object-contain p-2"
+              />
+            </div>
+
+            <div className="space-y-1 text-sm">
+              <div className="flex items-center gap-2">
+                <span className="w-24 text-xs text-gray-500">Firmante</span>
+                <span className="font-medium text-gray-900">{data.signature.signerName}</span>
+              </div>
+              {data.signature.signerDocument && (
+                <div className="flex items-center gap-2">
+                  <span className="w-24 text-xs text-gray-500">Documento</span>
+                  <span className="font-medium text-gray-900">{data.signature.signerDocument}</span>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-5 flex justify-end">
+              <button
+                onClick={() => setShowSignature(false)}
+                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Cerrar
+              </button>
+            </div>
           </div>
         </div>
       )}
