@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useParams, useNavigate } from '@tanstack/react-router'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { api } from '@/lib/api'
+import { api, baseURL } from '@/lib/api'
 import type { InspectionDetailDto } from '@/types/api'
 
 interface HistoryEntry {
@@ -38,6 +38,22 @@ export function InspectionDetailPage() {
   const [supervisorNotes, setSupervisorNotes] = useState('')
   const [showApproveModal, setShowApproveModal] = useState(false)
   const [showSignature, setShowSignature] = useState(false)
+  const [downloading, setDownloading] = useState(false)
+
+  async function downloadCertificate() {
+    setDownloading(true)
+    try {
+      const res = await api.get(`/inspections/${id}/certificate`, { responseType: 'blob' })
+      const url = URL.createObjectURL(res.data)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `certificado-${data?.orderNumber ?? id}.pdf`
+      a.click()
+      URL.revokeObjectURL(url)
+    } finally {
+      setDownloading(false)
+    }
+  }
 
   const { data, isLoading } = useQuery({
     queryKey: ['inspection', id],
@@ -91,12 +107,13 @@ export function InspectionDetailPage() {
             <Button onClick={() => setShowApproveModal(true)}>Aprobar inspección</Button>
           )}
           {data.status === 'Completed' && (
-            <a
-              href={`/api/v1/inspections/${id}/certificate`} target="_blank" rel="noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-green-300 bg-green-50 px-3 py-1.5 text-sm font-medium text-green-700 hover:bg-green-100"
+            <button
+              onClick={downloadCertificate}
+              disabled={downloading}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-green-300 bg-green-50 px-3 py-1.5 text-sm font-medium text-green-700 hover:bg-green-100 disabled:opacity-50"
             >
-              ↓ Descargar certificado PDF
-            </a>
+              {downloading ? 'Descargando...' : '↓ Descargar certificado PDF'}
+            </button>
           )}
         </div>
       </div>
