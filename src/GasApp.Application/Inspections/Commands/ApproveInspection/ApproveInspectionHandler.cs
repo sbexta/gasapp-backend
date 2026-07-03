@@ -10,6 +10,7 @@ namespace GasApp.Application.Inspections.Commands.ApproveInspection;
 
 public class ApproveInspectionHandler(
     IInspectionRepository inspectionRepo,
+    IWorkOrderRepository workOrderRepo,
     ICurrentUserService currentUser,
     ICertificateService certificateService,
     ICertificateRepository certRepo,
@@ -39,6 +40,12 @@ public class ApproveInspectionHandler(
         inspection.TransitionStatus(InspectionStatus.Completed, UserRole.Admin);
         await historyRepo.AddAsync(InspectionStatusHistory.Create(
             inspection.Id, InspectionStatus.GeneratingDocs, InspectionStatus.Completed, currentUser.UserId), cancellationToken);
+
+        // Complete the work order
+        var workOrder = await workOrderRepo.GetByIdAsync(inspection.WorkOrderId, cancellationToken)
+            ?? throw new NotFoundException("OrdenDeTrabajo", inspection.WorkOrderId);
+        workOrder.Complete();
+        workOrderRepo.Update(workOrder);
 
         // Notify technician
         var notif = Notification.Create(
