@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useParams, useNavigate } from '@tanstack/react-router'
 import { api } from '@/lib/api'
-import { Plus, ChevronLeft, Trash2 } from 'lucide-react'
+import { Plus, ChevronLeft } from 'lucide-react'
 
 interface TemplateDetail {
   id: string

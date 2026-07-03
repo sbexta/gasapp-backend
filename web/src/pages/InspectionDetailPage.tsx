@@ -209,7 +209,7 @@ export function InspectionDetailPage() {
           <h2 className="mb-3 text-base font-semibold text-gray-900">Historial de estados</h2>
           <div className="relative pl-4">
             <div className="absolute left-1.5 top-2 bottom-2 w-px bg-gray-200" />
-            {history.map((entry, i) => (
+            {history.map((entry) => (
               <div key={entry.id} className="relative mb-4 pl-5">
                 <span className="absolute -left-0.5 top-1.5 h-3 w-3 rounded-full border-2 border-white bg-blue-500 shadow" />
                 <div className="rounded-lg border border-gray-200 bg-white p-3">
