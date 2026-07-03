@@ -10,7 +10,7 @@ namespace GasApp.Infrastructure.Certificates;
 
 public class CertificateService(AppDbContext context) : ICertificateService
 {
-    public async Task<(string CertificateNumber, string FilePath)> GenerateAsync(
+    public async Task<(string CertificateNumber, byte[] PdfBytes)> GenerateAsync(
         Guid inspectionId, CancellationToken ct = default)
     {
         QuestPDF.Settings.License = LicenseType.Community;
@@ -69,13 +69,7 @@ public class CertificateService(AppDbContext context) : ICertificateService
         });
 
         var pdfBytes = pdf.GeneratePdf();
-
-        var directory = Path.Combine("uploads", "certificates");
-        Directory.CreateDirectory(directory);
-        var filePath = Path.Combine(directory, $"{certNumber}.pdf");
-        await File.WriteAllBytesAsync(filePath, pdfBytes, ct);
-
-        return (certNumber, filePath);
+        return (certNumber, pdfBytes);
     }
 
     record CertData(

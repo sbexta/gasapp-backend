@@ -14,7 +14,8 @@ public class InspectionCertificateConfiguration : IEntityTypeConfiguration<Inspe
         builder.Property(c => c.InspectionId).HasColumnName("inspection_id").IsRequired();
         builder.Property(c => c.CertificateNumber).HasColumnName("certificate_number").HasMaxLength(50).IsRequired();
         builder.Property(c => c.IssuedAt).HasColumnName("issued_at").IsRequired();
-        builder.Property(c => c.FilePath).HasColumnName("file_path").HasMaxLength(500).IsRequired();
+        builder.Property(c => c.FilePath).HasColumnName("file_path").HasMaxLength(500).IsRequired(false);
+        builder.Property(c => c.PdfData).HasColumnName("pdf_data").IsRequired();
         builder.Property(c => c.IssuedById).HasColumnName("issued_by_id").IsRequired();
         builder.Property(c => c.CreatedAt).HasColumnName("created_at");
         builder.Property(c => c.UpdatedAt).HasColumnName("updated_at");

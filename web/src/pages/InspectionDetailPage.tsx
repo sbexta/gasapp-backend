@@ -270,7 +270,11 @@ export function InspectionDetailPage() {
 
             <div className="mb-4 overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
               <img
-                src={`data:image/png;base64,${data.signature.signatureData}`}
+                src={
+                  data.signature.signatureData.startsWith('data:')
+                    ? data.signature.signatureData
+                    : `data:image/png;base64,${data.signature.signatureData}`
+                }
                 alt="Firma del cliente"
                 className="mx-auto block max-h-48 w-full object-contain p-2"
               />

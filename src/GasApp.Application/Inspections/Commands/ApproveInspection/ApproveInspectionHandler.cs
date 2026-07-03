@@ -31,9 +31,9 @@ public class ApproveInspectionHandler(
         await historyRepo.AddAsync(InspectionStatusHistory.Create(
             inspection.Id, prevStatus, InspectionStatus.GeneratingDocs, currentUser.UserId, request.SupervisorNotes), cancellationToken);
 
-        // Generate PDF certificate
-        var (certNumber, filePath) = await certificateService.GenerateAsync(inspection.Id, cancellationToken);
-        var cert = InspectionCertificate.Create(inspection.Id, certNumber, filePath, currentUser.UserId);
+        // Generate PDF certificate and store bytes in DB
+        var (certNumber, pdfBytes) = await certificateService.GenerateAsync(inspection.Id, cancellationToken);
+        var cert = InspectionCertificate.Create(inspection.Id, certNumber, pdfBytes, currentUser.UserId);
         await certRepo.AddAsync(cert, cancellationToken);
 
         // GeneratingDocs → Completed

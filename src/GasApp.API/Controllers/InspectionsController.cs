@@ -105,12 +105,9 @@ public class InspectionsController(
     {
         var cert = await certRepo.GetByInspectionIdAsync(id, ct);
         if (cert == null) return NotFound(new { message = "Certificado no generado aún." });
+        if (cert.PdfData.Length == 0) return NotFound(new { message = "Datos del certificado no disponibles." });
 
-        if (!System.IO.File.Exists(cert.FilePath))
-            return NotFound(new { message = "Archivo del certificado no encontrado en el servidor." });
-
-        var bytes = await System.IO.File.ReadAllBytesAsync(cert.FilePath, ct);
-        return File(bytes, "application/pdf", $"{cert.CertificateNumber}.pdf");
+        return File(cert.PdfData, "application/pdf", $"{cert.CertificateNumber}.pdf");
     }
 
     [HttpPost("{id:guid}/evidences")]
