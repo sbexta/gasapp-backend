@@ -31,8 +31,8 @@ export function DashboardPage() {
   })
 
   const stats = [
-    { label: 'Clientes activos', value: clientsData?.totalCount ?? '—', icon: Building2, color: 'text-blue-600' },
-    { label: 'Órdenes totales', value: ordersData?.totalCount ?? '—', icon: ClipboardList, color: 'text-purple-600' },
+    { label: 'Clientes activos', value: clientsData?.total ?? '—', icon: Building2, color: 'text-blue-600' },
+    { label: 'Órdenes totales', value: ordersData?.total ?? '—', icon: ClipboardList, color: 'text-purple-600' },
     {
       label: 'Completadas',
       value: ordersData?.items.filter((o) => o.status === 'Completed').length ?? '—',

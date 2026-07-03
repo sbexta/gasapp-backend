@@ -59,7 +59,7 @@ export function ClientsPage() {
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Clientes</h1>
-          <p className="text-sm text-gray-500">{data?.totalCount ?? 0} clientes registrados</p>
+          <p className="text-sm text-gray-500">{data?.total ?? 0} clientes registrados</p>
         </div>
         <Dialog.Root open={open} onOpenChange={setOpen}>
           <Dialog.Trigger asChild>

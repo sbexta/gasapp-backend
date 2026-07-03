@@ -73,7 +73,7 @@ export function UsersPage() {
       <div className="mb-6 flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Usuarios</h1>
-          <p className="text-sm text-gray-500">{data?.totalCount ?? 0} usuarios registrados</p>
+          <p className="text-sm text-gray-500">{data?.total ?? 0} usuarios registrados</p>
         </div>
         <Button onClick={() => setShowCreate(true)}>+ Nuevo usuario</Button>
       </div>

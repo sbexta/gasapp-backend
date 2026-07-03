@@ -163,7 +163,7 @@ export function WorkOrdersPage() {
       <div className="mb-6 flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Órdenes de trabajo</h1>
-          <p className="text-sm text-gray-500">{data?.totalCount ?? 0} órdenes registradas</p>
+          <p className="text-sm text-gray-500">{data?.total ?? 0} órdenes registradas</p>
         </div>
         <Button onClick={() => setShowCreate(true)}>+ Nueva orden</Button>
       </div>
