@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   View, Text, ScrollView, TouchableOpacity, TextInput,
   StyleSheet, Alert, ActivityIndicator,
@@ -6,6 +6,7 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import * as Location from 'expo-location'
 import { api } from '@/lib/api'
 import { ConnectivityBanner } from '@/components/ConnectivityBanner'
 import type { WorkOrderChecklistDto, ChecklistItemDto } from '@/types/api'
@@ -14,6 +15,7 @@ export default function ChecklistScreen() {
   const { workOrderId } = useLocalSearchParams<{ workOrderId: string }>()
   const router = useRouter()
   const queryClient = useQueryClient()
+  const locationSent = useRef(false)
 
   const { data, isLoading } = useQuery({
     queryKey: ['checklist', workOrderId],
@@ -22,6 +24,22 @@ export default function ChecklistScreen() {
         .then(r => r.data),
     enabled: !!workOrderId,
   })
+
+  useEffect(() => {
+    if (!data?.inspectionId || locationSent.current) return
+    locationSent.current = true
+
+    ;(async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync()
+      if (status !== 'granted') return
+
+      const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High })
+      await api.post(`/inspections/${data.inspectionId}/location`, {
+        latitude: loc.coords.latitude,
+        longitude: loc.coords.longitude,
+      }).catch(() => {})
+    })()
+  }, [data?.inspectionId])
 
   const mutation = useMutation({
     mutationFn: (payload: { itemId: string; body: object }) =>

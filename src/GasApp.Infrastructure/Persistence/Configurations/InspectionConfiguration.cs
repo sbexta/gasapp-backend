@@ -18,6 +18,9 @@ public class InspectionConfiguration : IEntityTypeConfiguration<Inspection>
         builder.Property(i => i.CompletedAt).HasColumnName("completed_at");
         builder.Property(i => i.TechnicianNotes).HasColumnName("technician_notes").HasMaxLength(2000);
         builder.Property(i => i.SupervisorNotes).HasColumnName("supervisor_notes").HasMaxLength(2000);
+        builder.Property(i => i.LocationLat).HasColumnName("location_lat");
+        builder.Property(i => i.LocationLng).HasColumnName("location_lng");
+        builder.Property(i => i.LocationCapturedAt).HasColumnName("location_captured_at");
         builder.Property(i => i.CreatedAt).HasColumnName("created_at");
         builder.Property(i => i.UpdatedAt).HasColumnName("updated_at");
         builder.Property(i => i.DeletedAt).HasColumnName("deleted_at");

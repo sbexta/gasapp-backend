@@ -53,7 +53,10 @@ public class CertificateService(AppDbContext context) : ICertificateService
             location?.Municipality ?? "—",
             inspection.SupervisorNotes,
             findings,
-            signature);
+            signature,
+            inspection.LocationLat,
+            inspection.LocationLng,
+            inspection.LocationCapturedAt);
 
         var pdf = Document.Create(container =>
         {
@@ -77,7 +80,8 @@ public class CertificateService(AppDbContext context) : ICertificateService
         DateTime ScheduledDate, DateTime? StartedAt, DateTime? CompletedAt,
         string TechnicianName, string ClientName, string LocationName,
         string Address, string Municipality, string? SupervisorNotes,
-        List<Finding> Findings, InspectionSignature? Signature);
+        List<Finding> Findings, InspectionSignature? Signature,
+        double? LocationLat, double? LocationLng, DateTime? LocationCapturedAt);
 
     static void ComposeHeader(IContainer container, CertData d)
     {
@@ -189,6 +193,32 @@ public class CertificateService(AppDbContext context) : ICertificateService
                         table.Cell().BorderBottom(1).BorderColor("#E5E7EB").Padding(6)
                             .Text(f.IsResolved ? "Resuelto" : "Pendiente").FontSize(9);
                     }
+                });
+            }
+
+            if (d.LocationLat.HasValue && d.LocationLng.HasValue)
+            {
+                col.Item().Height(12);
+                col.Item().Text("UBICACIÓN DE LA INSPECCIÓN").FontSize(9).Bold().FontColor("#1E40AF");
+                col.Item().Height(4);
+                col.Item().Border(1).BorderColor("#E5E7EB").Padding(10).Row(row =>
+                {
+                    row.RelativeItem().Column(c =>
+                    {
+                        c.Item().Text("Coordenadas GPS").FontSize(8).FontColor("#6B7280");
+                        c.Item().Text($"{d.LocationLat:F6}°, {d.LocationLng:F6}°").Bold().FontSize(9);
+                        if (d.LocationCapturedAt.HasValue)
+                        {
+                            c.Item().Height(4);
+                            c.Item().Text("Capturada el").FontSize(8).FontColor("#6B7280");
+                            c.Item().Text(d.LocationCapturedAt.Value.ToString("dd/MM/yyyy HH:mm") + " UTC").Bold().FontSize(9);
+                        }
+                    });
+                    row.RelativeItem().Column(c =>
+                    {
+                        c.Item().Text("Verificar en Google Maps").FontSize(8).FontColor("#6B7280");
+                        c.Item().Text($"maps.google.com/?q={d.LocationLat:F6},{d.LocationLng:F6}").FontSize(8).FontColor("#1D4ED8");
+                    });
                 });
             }
 

@@ -8,6 +8,7 @@ public class InspectionCertificate : AuditableEntity
     public string? FilePath { get; private set; }
     public byte[] PdfData { get; private set; } = Array.Empty<byte>();
     public Guid IssuedById { get; private set; }
+    public Guid PublicToken { get; private set; }
 
     private InspectionCertificate() { }
 
@@ -18,6 +19,7 @@ public class InspectionCertificate : AuditableEntity
             CertificateNumber = number,
             PdfData = pdfData,
             IssuedAt = DateTime.UtcNow,
-            IssuedById = issuedById
+            IssuedById = issuedById,
+            PublicToken = Guid.NewGuid()
         };
 }

@@ -38,7 +38,10 @@ public class GetInspectionDetailHandler(
             signature is not null,
             signature is not null
                 ? new SignatureDto(signature.SignerName, signature.SignerDocument, signature.SignedAt, signature.SignatureData)
-                : null
+                : null,
+            inspection.LocationLat,
+            inspection.LocationLng,
+            inspection.LocationCapturedAt
         );
     }
 }

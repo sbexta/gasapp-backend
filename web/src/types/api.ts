@@ -119,6 +119,9 @@ export interface InspectionDetailDto {
   findings: InspectionFindingDto[]
   hasSignature: boolean
   signature: SignatureDto | null
+  locationLat: number | null
+  locationLng: number | null
+  locationCapturedAt: string | null
 }
 
 export interface InspectionResponseDto {

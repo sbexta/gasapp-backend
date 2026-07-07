@@ -39,6 +39,8 @@ export function InspectionDetailPage() {
   const [showApproveModal, setShowApproveModal] = useState(false)
   const [showSignature, setShowSignature] = useState(false)
   const [downloading, setDownloading] = useState(false)
+  const [publicLink, setPublicLink] = useState<string | null>(null)
+  const [copied, setCopied] = useState(false)
 
   async function downloadCertificate() {
     setDownloading(true)
@@ -53,6 +55,20 @@ export function InspectionDetailPage() {
     } finally {
       setDownloading(false)
     }
+  }
+
+  async function fetchPublicLink() {
+    if (publicLink) {
+      navigator.clipboard.writeText(publicLink)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+      return
+    }
+    const res = await api.get<{ publicUrl: string }>(`/inspections/${id}/certificate/link`)
+    setPublicLink(res.data.publicUrl)
+    navigator.clipboard.writeText(res.data.publicUrl)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
   }
 
   const { data, isLoading } = useQuery({
@@ -107,13 +123,21 @@ export function InspectionDetailPage() {
             <Button onClick={() => setShowApproveModal(true)}>Aprobar inspección</Button>
           )}
           {data.status === 'Completed' && (
-            <button
-              onClick={downloadCertificate}
-              disabled={downloading}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-green-300 bg-green-50 px-3 py-1.5 text-sm font-medium text-green-700 hover:bg-green-100 disabled:opacity-50"
-            >
-              {downloading ? 'Descargando...' : '↓ Descargar certificado PDF'}
-            </button>
+            <>
+              <button
+                onClick={downloadCertificate}
+                disabled={downloading}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-green-300 bg-green-50 px-3 py-1.5 text-sm font-medium text-green-700 hover:bg-green-100 disabled:opacity-50"
+              >
+                {downloading ? 'Descargando...' : '↓ Descargar certificado PDF'}
+              </button>
+              <button
+                onClick={fetchPublicLink}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-blue-300 bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-700 hover:bg-blue-100"
+              >
+                {copied ? '✓ Link copiado' : '🔗 Copiar link para cliente'}
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -146,6 +170,29 @@ export function InspectionDetailPage() {
           )}
         </div>
       </div>
+
+      {/* Ubicación */}
+      {data.locationLat && data.locationLng ? (
+        <div className="mb-6 rounded-lg border border-blue-100 bg-blue-50 p-4">
+          <p className="mb-1 text-xs font-medium text-blue-600">📍 Ubicación de la inspección</p>
+          <p className="text-sm font-medium text-gray-900">
+            {data.locationLat.toFixed(6)}°, {data.locationLng.toFixed(6)}°
+            {data.locationCapturedAt && (
+              <span className="ml-2 text-xs text-gray-500">
+                — capturada el {new Date(data.locationCapturedAt).toLocaleString('es-CO')}
+              </span>
+            )}
+          </p>
+          <a
+            href={`https://maps.google.com/?q=${data.locationLat},${data.locationLng}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-1 inline-flex items-center gap-1 text-xs text-blue-600 hover:underline"
+          >
+            Ver en Google Maps →
+          </a>
+        </div>
+      ) : null}
 
       {data.technicianNotes && (
         <div className="mb-6 rounded-lg border border-gray-200 bg-white p-4">

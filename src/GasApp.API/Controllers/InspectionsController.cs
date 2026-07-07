@@ -1,4 +1,5 @@
 using GasApp.Application.Common.Interfaces;
+using GasApp.Application.Inspections.Commands.CaptureLocation;
 using GasApp.Application.Inspections.Commands.AddFinding;
 using GasApp.Application.Inspections.Queries.GetInspectionHistory;
 using GasApp.Domain.Repositories;
@@ -77,6 +78,14 @@ public class InspectionsController(
         return NoContent();
     }
 
+    [HttpPost("{id:guid}/location")]
+    [Authorize(Roles = "Admin,Supervisor,Technician")]
+    public async Task<IActionResult> CaptureLocation(Guid id, [FromBody] CaptureLocationRequest request, CancellationToken ct)
+    {
+        await mediator.Send(new CaptureLocationCommand(id, request.Latitude, request.Longitude), ct);
+        return NoContent();
+    }
+
     [HttpPost("{id:guid}/submit")]
     [Authorize(Roles = "Admin,Supervisor,Technician")]
     public async Task<IActionResult> Submit(Guid id, [FromBody] SubmitInspectionRequest request, CancellationToken ct)
@@ -110,6 +119,21 @@ public class InspectionsController(
         return File(cert.PdfData, "application/pdf", $"{cert.CertificateNumber}.pdf");
     }
 
+    [HttpGet("{id:guid}/certificate/link")]
+    public async Task<IActionResult> GetCertificatePublicLink(Guid id, CancellationToken ct)
+    {
+        var cert = await certRepo.GetByInspectionIdAsync(id, ct);
+        if (cert == null) return NotFound(new { message = "Certificado no generado aún." });
+
+        var baseUrl = $"{Request.Scheme}://{Request.Host}";
+        return Ok(new
+        {
+            publicUrl = $"{baseUrl}/api/v1/certificates/public/{cert.PublicToken}",
+            certificateNumber = cert.CertificateNumber,
+            issuedAt = cert.IssuedAt
+        });
+    }
+
     [HttpPost("{id:guid}/evidences")]
     [Authorize(Roles = "Admin,Supervisor,Technician")]
     public async Task<IActionResult> UploadEvidence(Guid id, [FromBody] UploadEvidenceRequest request, CancellationToken ct)
@@ -133,6 +157,7 @@ public record AddFindingRequest(
 public record CaptureSignatureRequest(
     string SignerName, string SignatureData, string? SignerDocument);
 
+public record CaptureLocationRequest(double Latitude, double Longitude);
 public record SubmitInspectionRequest(string? TechnicianNotes);
 public record ApproveInspectionRequest(string? SupervisorNotes);
 

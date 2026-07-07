@@ -17,12 +17,14 @@ public class InspectionCertificateConfiguration : IEntityTypeConfiguration<Inspe
         builder.Property(c => c.FilePath).HasColumnName("file_path").HasMaxLength(500).IsRequired(false);
         builder.Property(c => c.PdfData).HasColumnName("pdf_data").IsRequired();
         builder.Property(c => c.IssuedById).HasColumnName("issued_by_id").IsRequired();
+        builder.Property(c => c.PublicToken).HasColumnName("public_token").IsRequired();
         builder.Property(c => c.CreatedAt).HasColumnName("created_at");
         builder.Property(c => c.UpdatedAt).HasColumnName("updated_at");
         builder.Property(c => c.DeletedAt).HasColumnName("deleted_at");
 
         builder.HasIndex(c => c.InspectionId).IsUnique().HasDatabaseName("ix_certificates_inspection_id");
         builder.HasIndex(c => c.CertificateNumber).IsUnique().HasDatabaseName("ix_certificates_number");
+        builder.HasIndex(c => c.PublicToken).IsUnique().HasDatabaseName("ix_certificates_public_token");
 
         builder.HasQueryFilter(c => c.DeletedAt == null);
     }

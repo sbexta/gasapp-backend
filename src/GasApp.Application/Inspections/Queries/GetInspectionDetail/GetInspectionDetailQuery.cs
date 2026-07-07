@@ -17,7 +17,10 @@ public record InspectionDetailDto(
     IReadOnlyList<ChecklistResponseDto> Responses,
     IReadOnlyList<FindingDto> Findings,
     bool HasSignature,
-    SignatureDto? Signature
+    SignatureDto? Signature,
+    double? LocationLat,
+    double? LocationLng,
+    DateTime? LocationCapturedAt
 );
 
 public record SignatureDto(

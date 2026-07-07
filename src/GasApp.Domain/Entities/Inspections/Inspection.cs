@@ -15,8 +15,19 @@ public class Inspection : AuditableEntity
     public DateTime? CompletedAt { get; private set; }
     public string? TechnicianNotes { get; private set; }
     public string? SupervisorNotes { get; private set; }
+    public double? LocationLat { get; private set; }
+    public double? LocationLng { get; private set; }
+    public DateTime? LocationCapturedAt { get; private set; }
 
     private Inspection() { }
+
+    public void SetLocation(double lat, double lng)
+    {
+        LocationLat = lat;
+        LocationLng = lng;
+        LocationCapturedAt = DateTime.UtcNow;
+        Touch();
+    }
 
     public static Inspection Create(Guid workOrderId, Guid technicianId)
     {

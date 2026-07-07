@@ -9,6 +9,9 @@ public class CertificateRepository(AppDbContext context) : ICertificateRepositor
     public async Task<InspectionCertificate?> GetByInspectionIdAsync(Guid inspectionId, CancellationToken ct = default)
         => await context.InspectionCertificates.FirstOrDefaultAsync(c => c.InspectionId == inspectionId, ct);
 
+    public async Task<InspectionCertificate?> GetByPublicTokenAsync(Guid publicToken, CancellationToken ct = default)
+        => await context.InspectionCertificates.FirstOrDefaultAsync(c => c.PublicToken == publicToken, ct);
+
     public async Task AddAsync(InspectionCertificate cert, CancellationToken ct = default)
         => await context.InspectionCertificates.AddAsync(cert, ct);
 }
