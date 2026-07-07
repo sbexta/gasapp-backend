@@ -1,6 +1,10 @@
 using GasApp.Application.ChecklistTemplates.Commands.AddChecklistItem;
 using GasApp.Application.ChecklistTemplates.Commands.AddChecklistSection;
 using GasApp.Application.ChecklistTemplates.Commands.CreateChecklistTemplate;
+using GasApp.Application.ChecklistTemplates.Commands.DeleteChecklistItem;
+using GasApp.Application.ChecklistTemplates.Commands.ToggleChecklistTemplate;
+using GasApp.Application.ChecklistTemplates.Commands.UpdateChecklistItem;
+using GasApp.Application.ChecklistTemplates.Commands.UpdateChecklistTemplate;
 using GasApp.Application.ChecklistTemplates.Queries.GetChecklistTemplateDetail;
 using GasApp.Application.ChecklistTemplates.Queries.GetChecklistTemplates;
 using MediatR;
@@ -50,6 +54,50 @@ public class ChecklistTemplatesController(IMediator mediator) : ControllerBase
             sectionId, request.Question, request.ItemType, request.Order, request.IsRequired, request.HelpText), ct);
         return Ok(new { id = itemId });
     }
+
+    [HttpPut("{id:guid}")]
+    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateTemplateRequest request, CancellationToken ct)
+    {
+        await mediator.Send(new UpdateChecklistTemplateCommand(id, request.Name, request.Description), ct);
+        return NoContent();
+    }
+
+    [HttpPut("{id:guid}/toggle")]
+    public async Task<IActionResult> Toggle(Guid id, CancellationToken ct)
+    {
+        await mediator.Send(new ToggleChecklistTemplateCommand(id), ct);
+        return NoContent();
+    }
+
+    [HttpPut("{id:guid}/sections/{sectionId:guid}/items/{itemId:guid}")]
+    public async Task<IActionResult> UpdateItem(Guid id, Guid sectionId, Guid itemId, [FromBody] UpdateItemRequest request, CancellationToken ct)
+    {
+        await mediator.Send(new UpdateChecklistItemCommand(
+            itemId, request.Question, request.ItemType, request.Order, request.IsRequired, request.HelpText), ct);
+        return NoContent();
+    }
+
+    [HttpDelete("{id:guid}/sections/{sectionId:guid}/items/{itemId:guid}")]
+    public async Task<IActionResult> DeleteItem(Guid id, Guid sectionId, Guid itemId, CancellationToken ct)
+    {
+        await mediator.Send(new DeleteChecklistItemCommand(itemId), ct);
+        return NoContent();
+    }
+}
+
+public class UpdateTemplateRequest
+{
+    public string Name { get; set; } = null!;
+    public string? Description { get; set; }
+}
+
+public class UpdateItemRequest
+{
+    public string Question { get; set; } = null!;
+    public string ItemType { get; set; } = "YesNo";
+    public int Order { get; set; }
+    public bool IsRequired { get; set; } = true;
+    public string? HelpText { get; set; }
 }
 
 public class CreateTemplateRequest

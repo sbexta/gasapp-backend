@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { api } from '@/lib/api'
-import { Plus, ChevronRight, ClipboardList } from 'lucide-react'
+import { Plus, ChevronRight, ClipboardList, Power } from 'lucide-react'
 
 interface TemplateListItem {
   id: string
@@ -34,6 +34,11 @@ export function ChecklistTemplatesPage() {
   const { data: inspectionTypes = [] } = useQuery({
     queryKey: ['inspection-types'],
     queryFn: () => api.get<InspectionType[]>('/inspection-types').then(r => r.data),
+  })
+
+  const toggleMutation = useMutation({
+    mutationFn: (id: string) => api.put(`/checklist-templates/${id}/toggle`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['checklist-templates'] }),
   })
 
   const createMutation = useMutation({
@@ -83,31 +88,46 @@ export function ChecklistTemplatesPage() {
       ) : (
         <div className="space-y-3">
           {templates.map(t => (
-            <button
+            <div
               key={t.id}
-              onClick={() => navigate({ to: `/checklist-templates/${t.id}` })}
-              className="w-full flex items-center justify-between rounded-xl border border-gray-200 bg-white px-5 py-4 hover:border-blue-300 hover:bg-blue-50 transition-colors text-left"
+              className="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-5 py-4 hover:border-blue-300 transition-colors"
             >
-              <div className="flex items-center gap-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50">
+              <button
+                className="flex items-center gap-4 flex-1 min-w-0 text-left"
+                onClick={() => navigate({ to: `/checklist-templates/${t.id}` })}
+              >
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50">
                   <ClipboardList className="h-5 w-5 text-blue-600" />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <p className="font-semibold text-gray-900">{t.name}</p>
-                  {t.description && <p className="text-sm text-gray-500">{t.description}</p>}
+                  {t.description && <p className="text-sm text-gray-500 truncate">{t.description}</p>}
                   {t.inspectionTypeName && (
                     <p className="text-xs text-blue-600 mt-0.5">Vinculada a: {t.inspectionTypeName}</p>
                   )}
                 </div>
-              </div>
-              <div className="flex items-center gap-4">
+              </button>
+              <div className="flex items-center gap-3 shrink-0 ml-4">
                 <span className="text-sm text-gray-500">{t.sectionCount} sección{t.sectionCount !== 1 ? 'es' : ''}</span>
                 <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${t.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
                   {t.isActive ? 'Activa' : 'Inactiva'}
                 </span>
+                <button
+                  onClick={() => toggleMutation.mutate(t.id)}
+                  disabled={toggleMutation.isPending}
+                  title={t.isActive ? 'Desactivar plantilla' : 'Activar plantilla'}
+                  className={`flex items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-medium disabled:opacity-50 transition-colors ${
+                    t.isActive
+                      ? 'border-red-200 bg-red-50 text-red-600 hover:bg-red-100'
+                      : 'border-green-200 bg-green-50 text-green-700 hover:bg-green-100'
+                  }`}
+                >
+                  <Power className="h-3.5 w-3.5" />
+                  {t.isActive ? 'Desactivar' : 'Activar'}
+                </button>
                 <ChevronRight className="h-4 w-4 text-gray-400" />
               </div>
-            </button>
+            </div>
           ))}
         </div>
       )}
