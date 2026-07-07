@@ -1,6 +1,7 @@
 using GasApp.Application.Common.Interfaces;
 using GasApp.Application.Inspections.Commands.CaptureLocation;
 using GasApp.Application.Inspections.Commands.AddFinding;
+using GasApp.Application.Inspections.Commands.RejectInspection;
 using GasApp.Application.Inspections.Queries.GetInspectionHistory;
 using GasApp.Domain.Repositories;
 using GasApp.Application.Inspections.Commands.ApproveInspection;
@@ -102,6 +103,14 @@ public class InspectionsController(
         return NoContent();
     }
 
+    [HttpPost("{id:guid}/reject")]
+    [Authorize(Roles = "Admin,Supervisor")]
+    public async Task<IActionResult> Reject(Guid id, [FromBody] RejectInspectionRequest request, CancellationToken ct)
+    {
+        await mediator.Send(new RejectInspectionCommand(id, request.SupervisorNotes), ct);
+        return NoContent();
+    }
+
     [HttpGet("{id:guid}/history")]
     public async Task<IActionResult> GetHistory(Guid id, CancellationToken ct)
     {
@@ -160,6 +169,7 @@ public record CaptureSignatureRequest(
 public record CaptureLocationRequest(double Latitude, double Longitude);
 public record SubmitInspectionRequest(string? TechnicianNotes);
 public record ApproveInspectionRequest(string? SupervisorNotes);
+public record RejectInspectionRequest(string? SupervisorNotes);
 
 public record UploadEvidenceRequest(
     EvidenceType Type, string FileName, string ContentType,

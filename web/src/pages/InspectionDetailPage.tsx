@@ -37,6 +37,8 @@ export function InspectionDetailPage() {
   const qc = useQueryClient()
   const [supervisorNotes, setSupervisorNotes] = useState('')
   const [showApproveModal, setShowApproveModal] = useState(false)
+  const [showRejectModal, setShowRejectModal] = useState(false)
+  const [rejectNotes, setRejectNotes] = useState('')
   const [showSignature, setShowSignature] = useState(false)
   const [downloading, setDownloading] = useState(false)
   const [publicLink, setPublicLink] = useState<string | null>(null)
@@ -92,6 +94,17 @@ export function InspectionDetailPage() {
     },
   })
 
+  const rejectMutation = useMutation({
+    mutationFn: () =>
+      api.post(`/inspections/${id}/reject`, { supervisorNotes: rejectNotes.trim() || null }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['inspection', id] })
+      qc.invalidateQueries({ queryKey: ['inspections'] })
+      setShowRejectModal(false)
+      setRejectNotes('')
+    },
+  })
+
   if (isLoading) {
     return <div className="p-8 text-gray-400">Cargando...</div>
   }
@@ -120,7 +133,15 @@ export function InspectionDetailPage() {
             {statusLabel[data.status] ?? data.status}
           </Badge>
           {data.status === 'TechnicalReview' && (
-            <Button onClick={() => setShowApproveModal(true)}>Aprobar inspección</Button>
+            <>
+              <button
+                onClick={() => setShowRejectModal(true)}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-red-300 bg-red-50 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-100"
+              >
+                ✕ Rechazar
+              </button>
+              <Button onClick={() => setShowApproveModal(true)}>Aprobar inspección</Button>
+            </>
           )}
           {data.status === 'Completed' && (
             <>
@@ -394,6 +415,40 @@ export function InspectionDetailPage() {
               <Button onClick={() => approveMutation.mutate()} disabled={approveMutation.isPending}>
                 {approveMutation.isPending ? 'Aprobando...' : 'Confirmar aprobación'}
               </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal rechazar */}
+      {showRejectModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+            <h2 className="mb-4 text-lg font-semibold text-gray-900">Rechazar inspección</h2>
+            <p className="mb-4 text-sm text-gray-500">
+              El técnico recibirá una notificación con el motivo del rechazo.
+            </p>
+            <textarea
+              value={rejectNotes}
+              onChange={(e) => setRejectNotes(e.target.value)}
+              placeholder="Motivo del rechazo (recomendado)..."
+              rows={3}
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            />
+            {rejectMutation.isError && (
+              <p className="mt-2 text-sm text-red-500">Error al rechazar. Intenta de nuevo.</p>
+            )}
+            <div className="mt-4 flex justify-end gap-3">
+              <Button variant="outline" onClick={() => setShowRejectModal(false)}>
+                Cancelar
+              </Button>
+              <button
+                onClick={() => rejectMutation.mutate()}
+                disabled={rejectMutation.isPending}
+                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
+              >
+                {rejectMutation.isPending ? 'Rechazando...' : 'Confirmar rechazo'}
+              </button>
             </div>
           </div>
         </div>
