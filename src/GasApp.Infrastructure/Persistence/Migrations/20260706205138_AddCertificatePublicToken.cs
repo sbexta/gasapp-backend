@@ -18,6 +18,9 @@ namespace GasApp.Infrastructure.Persistence.Migrations
                 nullable: false,
                 defaultValue: new Guid("00000000-0000-0000-0000-000000000000"));
 
+            // Asigna un UUID único a cada fila existente antes de crear el índice único
+            migrationBuilder.Sql("UPDATE inspection_certificates SET public_token = gen_random_uuid() WHERE public_token = '00000000-0000-0000-0000-000000000000'");
+
             migrationBuilder.CreateIndex(
                 name: "ix_certificates_public_token",
                 table: "inspection_certificates",
