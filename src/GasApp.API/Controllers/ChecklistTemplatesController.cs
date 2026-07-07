@@ -2,8 +2,10 @@ using GasApp.Application.ChecklistTemplates.Commands.AddChecklistItem;
 using GasApp.Application.ChecklistTemplates.Commands.AddChecklistSection;
 using GasApp.Application.ChecklistTemplates.Commands.CreateChecklistTemplate;
 using GasApp.Application.ChecklistTemplates.Commands.DeleteChecklistItem;
+using GasApp.Application.ChecklistTemplates.Commands.DeleteChecklistSection;
 using GasApp.Application.ChecklistTemplates.Commands.ToggleChecklistTemplate;
 using GasApp.Application.ChecklistTemplates.Commands.UpdateChecklistItem;
+using GasApp.Application.ChecklistTemplates.Commands.UpdateChecklistSection;
 using GasApp.Application.ChecklistTemplates.Commands.UpdateChecklistTemplate;
 using GasApp.Application.ChecklistTemplates.Queries.GetChecklistTemplateDetail;
 using GasApp.Application.ChecklistTemplates.Queries.GetChecklistTemplates;
@@ -83,6 +85,20 @@ public class ChecklistTemplatesController(IMediator mediator) : ControllerBase
         await mediator.Send(new DeleteChecklistItemCommand(itemId), ct);
         return NoContent();
     }
+
+    [HttpPut("{id:guid}/sections/{sectionId:guid}")]
+    public async Task<IActionResult> UpdateSection(Guid id, Guid sectionId, [FromBody] UpdateSectionRequest request, CancellationToken ct)
+    {
+        await mediator.Send(new UpdateChecklistSectionCommand(sectionId, request.Name, request.Order), ct);
+        return NoContent();
+    }
+
+    [HttpDelete("{id:guid}/sections/{sectionId:guid}")]
+    public async Task<IActionResult> DeleteSection(Guid id, Guid sectionId, CancellationToken ct)
+    {
+        await mediator.Send(new DeleteChecklistSectionCommand(sectionId), ct);
+        return NoContent();
+    }
 }
 
 public class UpdateTemplateRequest
@@ -108,6 +124,12 @@ public class CreateTemplateRequest
 }
 
 public class AddSectionRequest
+{
+    public string Name { get; set; } = null!;
+    public int Order { get; set; }
+}
+
+public class UpdateSectionRequest
 {
     public string Name { get; set; } = null!;
     public int Order { get; set; }

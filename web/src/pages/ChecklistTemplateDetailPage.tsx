@@ -48,7 +48,7 @@ export function ChecklistTemplateDetailPage() {
   const qc = useQueryClient()
 
   // Modales
-  const [showSectionModal, setShowSectionModal] = useState(false)
+  const [showSectionModal, setShowSectionModal] = useState<{ section?: SectionDetail } | null>(null)
   const [sectionForm, setSectionForm] = useState({ name: '' })
   const [sectionError, setSectionError] = useState('')
 
@@ -72,11 +72,29 @@ export function ChecklistTemplateDetailPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['checklist-template', id] })
       qc.invalidateQueries({ queryKey: ['checklist-templates'] })
-      setShowSectionModal(false)
+      setShowSectionModal(null)
       setSectionForm({ name: '' })
       setSectionError('')
     },
     onError: (err: any) => setSectionError(err.response?.data?.message ?? 'Error'),
+  })
+
+  const updateSectionMutation = useMutation({
+    mutationFn: ({ sectionId, name, order }: { sectionId: string; name: string; order: number }) =>
+      api.put(`/checklist-templates/${id}/sections/${sectionId}`, { name, order }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['checklist-template', id] })
+      setShowSectionModal(null)
+      setSectionForm({ name: '' })
+      setSectionError('')
+    },
+    onError: (err: any) => setSectionError(err.response?.data?.message ?? 'Error'),
+  })
+
+  const deleteSectionMutation = useMutation({
+    mutationFn: (sectionId: string) =>
+      api.delete(`/checklist-templates/${id}/sections/${sectionId}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['checklist-template', id] }),
   })
 
   const addItemMutation = useMutation({
@@ -221,16 +239,35 @@ export function ChecklistTemplateDetailPage() {
         {data.sections.map(section => (
           <div key={section.id} className="rounded-xl border border-gray-200 bg-white overflow-hidden">
             <div className="flex items-center justify-between bg-gray-50 px-4 py-3 border-b border-gray-200">
-              <div>
-                <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide mr-2">Sección {section.order}</span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Sección {section.order}</span>
                 <span className="font-semibold text-gray-800">{section.name}</span>
               </div>
-              <button
-                onClick={() => openAddItem(section.id)}
-                className="flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-800"
-              >
-                <Plus className="h-3.5 w-3.5" /> Agregar ítem
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => { setSectionForm({ name: section.name }); setSectionError(''); setShowSectionModal({ section }) }}
+                  className="p-1 rounded hover:bg-blue-100 text-blue-500"
+                  title="Editar sección"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  onClick={() => {
+                    if (confirm(`¿Eliminar la sección "${section.name}" y todos sus ítems?`))
+                      deleteSectionMutation.mutate(section.id)
+                  }}
+                  className="p-1 rounded hover:bg-red-100 text-red-500"
+                  title="Eliminar sección"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  onClick={() => openAddItem(section.id)}
+                  className="flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-800 ml-1"
+                >
+                  <Plus className="h-3.5 w-3.5" /> Agregar ítem
+                </button>
+              </div>
             </div>
 
             {section.items.length === 0 ? (
@@ -273,7 +310,7 @@ export function ChecklistTemplateDetailPage() {
         ))}
 
         <button
-          onClick={() => { setShowSectionModal(true); setSectionError('') }}
+          onClick={() => { setSectionForm({ name: '' }); setSectionError(''); setShowSectionModal({}) }}
           className="w-full flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-300 py-3 text-sm font-semibold text-gray-500 hover:border-blue-400 hover:text-blue-600 transition-colors"
         >
           <Plus className="h-4 w-4" /> Agregar sección
@@ -322,11 +359,13 @@ export function ChecklistTemplateDetailPage() {
         </div>
       )}
 
-      {/* Modal nueva sección */}
-      {showSectionModal && (
+      {/* Modal nueva / editar sección */}
+      {showSectionModal !== null && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">Nueva sección</h2>
+            <h2 className="text-lg font-bold text-gray-900 mb-4">
+              {showSectionModal.section ? 'Editar sección' : 'Nueva sección'}
+            </h2>
             {sectionError && <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{sectionError}</p>}
             <label className="block text-sm font-medium text-gray-700 mb-1">Nombre de la sección *</label>
             <input
@@ -337,15 +376,22 @@ export function ChecklistTemplateDetailPage() {
               autoFocus
             />
             <div className="mt-4 flex justify-end gap-3">
-              <button onClick={() => { setShowSectionModal(false); setSectionError('') }} className="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100">
+              <button onClick={() => { setShowSectionModal(null); setSectionError('') }} className="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100">
                 Cancelar
               </button>
               <button
-                onClick={() => { if (!sectionForm.name.trim()) { setSectionError('Requerido'); return } addSectionMutation.mutate(sectionForm.name.trim()) }}
-                disabled={addSectionMutation.isPending}
+                onClick={() => {
+                  if (!sectionForm.name.trim()) { setSectionError('Requerido'); return }
+                  if (showSectionModal.section) {
+                    updateSectionMutation.mutate({ sectionId: showSectionModal.section.id, name: sectionForm.name.trim(), order: showSectionModal.section.order })
+                  } else {
+                    addSectionMutation.mutate(sectionForm.name.trim())
+                  }
+                }}
+                disabled={addSectionMutation.isPending || updateSectionMutation.isPending}
                 className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
               >
-                {addSectionMutation.isPending ? 'Guardando...' : 'Agregar'}
+                {(addSectionMutation.isPending || updateSectionMutation.isPending) ? 'Guardando...' : showSectionModal.section ? 'Guardar cambios' : 'Agregar'}
               </button>
             </div>
           </div>

@@ -6,4 +6,6 @@ public interface IChecklistSectionRepository
 {
     Task<ChecklistSection?> GetByIdAsync(Guid id, CancellationToken ct = default);
     Task AddAsync(ChecklistSection section, CancellationToken ct = default);
+    void Update(ChecklistSection section);
+    void Remove(ChecklistSection section);
 }

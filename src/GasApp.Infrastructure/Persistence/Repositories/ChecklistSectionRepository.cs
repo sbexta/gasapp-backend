@@ -11,4 +11,10 @@ public class ChecklistSectionRepository(AppDbContext context) : IChecklistSectio
 
     public async Task AddAsync(ChecklistSection section, CancellationToken ct = default)
         => await context.ChecklistSections.AddAsync(section, ct);
+
+    public void Update(ChecklistSection section)
+        => context.ChecklistSections.Update(section);
+
+    public void Remove(ChecklistSection section)
+        => context.ChecklistSections.Remove(section);
 }
