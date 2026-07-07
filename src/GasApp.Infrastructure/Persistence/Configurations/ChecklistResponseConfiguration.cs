@@ -22,6 +22,11 @@ public class ChecklistResponseConfiguration : IEntityTypeConfiguration<Checklist
         builder.Property(r => r.UpdatedAt).HasColumnName("updated_at");
         builder.Property(r => r.DeletedAt).HasColumnName("deleted_at");
 
+        builder.HasOne(r => r.ChecklistItem)
+            .WithMany()
+            .HasForeignKey(r => r.ChecklistItemId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.HasIndex(r => new { r.InspectionId, r.ChecklistItemId })
             .IsUnique()
             .HasDatabaseName("ix_checklist_responses_inspection_item");

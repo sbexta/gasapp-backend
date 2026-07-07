@@ -1,3 +1,4 @@
+using GasApp.Domain.Entities.Checklists;
 using GasApp.Domain.Exceptions;
 
 namespace GasApp.Domain.Entities.Inspections;
@@ -6,6 +7,7 @@ public class ChecklistResponse : AuditableEntity
 {
     public Guid InspectionId { get; private set; }
     public Guid ChecklistItemId { get; private set; }
+    public ChecklistItem? ChecklistItem { get; private set; }
     public string? TextValue { get; private set; }
     public bool? BoolValue { get; private set; }
     public decimal? NumericValue { get; private set; }

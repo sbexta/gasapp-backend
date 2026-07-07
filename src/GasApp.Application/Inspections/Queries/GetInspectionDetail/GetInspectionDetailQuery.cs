@@ -33,6 +33,7 @@ public record SignatureDto(
 public record ChecklistResponseDto(
     Guid Id,
     Guid ChecklistItemId,
+    string? ItemQuestion,
     string? TextValue,
     bool? BoolValue,
     decimal? NumericValue,

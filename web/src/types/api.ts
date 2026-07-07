@@ -127,6 +127,7 @@ export interface InspectionDetailDto {
 export interface InspectionResponseDto {
   id: string
   checklistItemId: string
+  itemQuestion: string | null
   textValue: string | null
   boolValue: boolean | null
   numericValue: number | null

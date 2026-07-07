@@ -30,7 +30,7 @@ public class GetInspectionDetailHandler(
             inspection.CompletedAt,
             inspection.TechnicianNotes,
             responses.Select(r => new ChecklistResponseDto(
-                r.Id, r.ChecklistItemId, r.TextValue, r.BoolValue, r.NumericValue, r.Complies, r.Notes
+                r.Id, r.ChecklistItemId, r.ChecklistItem?.Question, r.TextValue, r.BoolValue, r.NumericValue, r.Complies, r.Notes
             )).ToList(),
             findings.Select(f => new FindingDto(
                 f.Id, f.Description, f.Severity.ToString(), f.RequiresCorrection, f.IsResolved, f.CorrectiveAction, f.ChecklistItemId

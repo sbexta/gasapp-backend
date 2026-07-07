@@ -274,7 +274,7 @@ export function InspectionDetailPage() {
               <tbody className="divide-y divide-gray-100">
                 {data.responses.map((r) => (
                   <tr key={r.id}>
-                    <td className="px-4 py-3 text-xs text-gray-500 font-mono">{r.checklistItemId.slice(0, 8)}…</td>
+                    <td className="px-4 py-3 text-sm text-gray-800">{r.itemQuestion ?? r.checklistItemId.slice(0, 8) + '…'}</td>
                     <td className="px-4 py-3 text-gray-700">
                       {r.boolValue !== null
                         ? (r.boolValue ? 'Sí' : 'No')

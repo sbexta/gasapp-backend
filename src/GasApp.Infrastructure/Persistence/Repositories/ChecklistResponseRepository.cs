@@ -12,6 +12,7 @@ public class ChecklistResponseRepository(AppDbContext context) : IChecklistRespo
 
     public async Task<IReadOnlyList<ChecklistResponse>> GetByInspectionIdAsync(Guid inspectionId, CancellationToken ct = default)
         => await context.ChecklistResponses
+            .Include(r => r.ChecklistItem)
             .Where(r => r.InspectionId == inspectionId)
             .ToListAsync(ct);
 
